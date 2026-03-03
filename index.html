@@ -1,12 +1,19 @@
-<!DOCTYPE html>
-<html lang="hi">
-<head>
+<html lang="hi"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#0d0f14">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SmartMock">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="application-name" content="SmartMock">
+<meta name="description" content="Smart Mock Test - Offline MCQ Practice App">
+<!-- PWA Manifest (inline) -->
+<link rel="manifest" href="data:application/manifest+json,{%22name%22:%22Smart%20Mock%20Test%22,%22short_name%22:%22SmartMock%22,%22description%22:%22Offline%20MCQ%20Practice%20App%22,%22start_url%22:%22.%22,%22display%22:%22standalone%22,%22orientation%22:%22portrait%22,%22background_color%22:%22%230d0f14%22,%22theme_color%22:%22%230d0f14%22,%22icons%22:[{%22src%22:%22data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20192%20192'%3E%3Crect%20width='192'%20height='192'%20rx='40'%20fill='%230d0f14'/%3E%3Crect%20x='16'%20y='16'%20width='160'%20height='160'%20rx='30'%20fill='%231a1e2b'/%3E%3Ctext%20y='125'%20x='96'%20text-anchor='middle'%20font-size='90'%3E%F0%9F%A7%A0%3C/text%3E%3C/svg%3E%22,%22sizes%22:%22192x192%22,%22type%22:%22image/svg+xml%22}]}">
+<!-- Apple Touch Icon (inline SVG as base64) -->
+<link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxODAgMTgwIj48cmVjdCB3aWR0aD0iMTgwIiBoZWlnaHQ9IjE4MCIgcng9IjQwIiBmaWxsPSIjMGQwZjE0Ii8+PHJlY3QgeD0iMTAiIHk9IjEwIiB3aWR0aD0iMTYwIiBoZWlnaHQ9IjE2MCIgcng9IjMwIiBmaWxsPSIjMWExZTJiIi8+PHRleHQgeT0iMTIwIiB4PSI5MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSI4MCI+8J+ngDwvdGV4dD48L3N2Zz4=">
 <title>Smart Mock Test</title>
-<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&amp;display=swap" rel="stylesheet">
 <style>
 :root{
   --bg:#0d0f14;--s1:#13161f;--s2:#1a1e2b;--s3:#222736;
@@ -251,6 +258,39 @@ input,textarea,select,button{font-family:inherit;}
 .qimg-thumb-wrap{display:inline-block;position:relative;margin-top:8px;}
 .qimg-thumb-wrap img{max-width:110px;max-height:80px;border-radius:8px;border:1px solid var(--border);cursor:pointer;}
 .qimg-thumb-wrap .rm-btn{position:absolute;top:-5px;right:-5px;background:var(--red);color:white;border-radius:50%;width:18px;height:18px;font-size:0.65rem;display:flex;align-items:center;justify-content:center;cursor:pointer;border:none;}
+
+/* ===== PWA INSTALL BANNER ===== */
+#pwa-banner{
+  position:fixed;bottom:0;left:0;right:0;z-index:99999;
+  background:linear-gradient(135deg,#1a1e2b,#13161f);
+  border-top:1px solid #2c3148;
+  padding:14px 16px calc(14px + env(safe-area-inset-bottom,0px));
+  display:none;animation:slideUpBanner .4s ease;
+  box-shadow:0 -8px 32px rgba(0,0,0,.5);
+}
+@keyframes slideUpBanner{from{transform:translateY(100%)}to{transform:translateY(0)}}
+#pwa-banner.show{display:block;}
+.pwa-banner-inner{display:flex;align-items:center;gap:12px;}
+.pwa-banner-icon{width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#4f7fff,#7c3aed);display:flex;align-items:center;justify-content:center;font-size:1.6rem;flex-shrink:0;}
+.pwa-banner-text{flex:1;}
+.pwa-banner-text h3{font-size:0.88rem;font-weight:800;color:#e2e6f0;margin-bottom:2px;}
+.pwa-banner-text p{font-size:0.72rem;color:#5a6178;}
+.pwa-banner-btns{display:flex;gap:8px;margin-top:10px;}
+.pwa-install-btn{flex:1;padding:10px;background:linear-gradient(135deg,#4f7fff,#7c3aed);color:white;border:none;border-radius:9px;font-size:0.82rem;font-weight:700;cursor:pointer;}
+.pwa-dismiss-btn{padding:10px 14px;background:#222736;color:#5a6178;border:1px solid #2c3148;border-radius:9px;font-size:0.82rem;font-weight:700;cursor:pointer;}
+#ios-guide{
+  position:fixed;bottom:0;left:0;right:0;z-index:99999;
+  background:#13161f;border-top:1px solid #2c3148;
+  padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px));
+  display:none;text-align:center;
+  box-shadow:0 -8px 32px rgba(0,0,0,.5);
+}
+#ios-guide.show{display:block;}
+#ios-guide h3{font-size:0.9rem;font-weight:800;margin-bottom:10px;color:#e2e6f0;}
+.ios-steps{display:flex;justify-content:center;gap:16px;flex-wrap:wrap;margin-bottom:12px;}
+.ios-step{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:0.7rem;color:#5a6178;font-weight:600;}
+.ios-step span{font-size:1.6rem;}
+#ios-guide button{padding:9px 20px;background:#222736;color:#5a6178;border:1px solid #2c3148;border-radius:9px;font-size:0.8rem;font-weight:700;cursor:pointer;}
 </style>
 </head>
 <body>
@@ -261,7 +301,7 @@ input,textarea,select,button{font-family:inherit;}
   <span class="topbar-badge" id="topBadge">0 Q</span>
 </div>
 
-<div class="scroll-body" id="scrollBody">
+<div class="scroll-body" id="scrollBody" style="display: block;">
 
   <!-- ADD PAGE -->
   <div class="page active" id="page-add">
@@ -278,7 +318,7 @@ input,textarea,select,button{font-family:inherit;}
       <div class="stat-row" id="addStatRow"></div>
       <div class="storage-bar">
         <span>💾</span>
-        <div class="storage-track"><div class="storage-fill" id="storageFill" style="width:0%"></div></div>
+        <div class="storage-track"><div class="storage-fill" id="storageFill" style="width: 0%; background: linear-gradient(90deg,var(--green),var(--acc));"></div></div>
         <span id="storageLabel" style="color:var(--muted);min-width:60px;text-align:right;">0 KB</span>
       </div>
     </div>
@@ -293,7 +333,7 @@ input,textarea,select,button{font-family:inherit;}
   <!-- BANK PAGE -->
   <div class="page" id="page-bank">
     <div style="height:14px;"></div>
-    <input type="text" class="search-bar" id="searchBar" placeholder="🔍 Search..." oninput="renderBank()" />
+    <input type="text" class="search-bar" id="searchBar" placeholder="🔍 Search..." oninput="renderBank()">
     <div style="display:flex;gap:8px;margin-bottom:12px;">
       <button class="btn btn-ghost btn-sm btn-inline" onclick="exportQ()">📤 Export</button>
       <button class="btn btn-ghost btn-sm btn-inline" onclick="importQ()">📥 Import</button>
@@ -312,7 +352,7 @@ input,textarea,select,button{font-family:inherit;}
       <div class="card-head">📄 PDF for Test (optional)</div>
       <p style="font-size:0.78rem;color:var(--muted);margin-bottom:12px;">PDF upload karein — test ke time upar dikhega, neeche questions honge.</p>
       <div class="upload-area" onclick="document.getElementById('testPdfIn').click()" id="pdfDropZone">
-        <input type="file" id="testPdfIn" accept="application/pdf" style="display:none" onchange="onTestPdfPicked(event)" />
+        <input type="file" id="testPdfIn" accept="application/pdf" style="display:none" onchange="onTestPdfPicked(event)">
         <div style="font-size:1.8rem;margin-bottom:6px;">📄</div>
         <h3>Tap to select PDF</h3>
         <p>Test ke time scroll karke padh sakte hain</p>
@@ -325,10 +365,10 @@ input,textarea,select,button{font-family:inherit;}
     </div>
 
     <div class="card">
-      <div class="stat-row" id="setupStats"></div>
-      <div class="fg"><label>Test Title</label><input type="text" id="tTitle" value="Mock Test" /></div>
-      <div class="fg"><label>Total Questions</label><input type="number" id="tNum" value="10" min="1" /></div>
-      <div class="fg"><label>Time (Minutes)</label><input type="number" id="tTime" value="30" min="1" /></div>
+      <div class="stat-row" id="setupStats"><div class="stat-box"><div class="stat-val">0</div><div class="stat-lbl">Questions</div></div><div class="stat-box"><div class="stat-val">0</div><div class="stat-lbl">Subjects</div></div></div>
+      <div class="fg"><label>Test Title</label><input type="text" id="tTitle" value="Mock Test"></div>
+      <div class="fg"><label>Total Questions</label><input type="number" id="tNum" value="10" min="1"></div>
+      <div class="fg"><label>Time (Minutes)</label><input type="number" id="tTime" value="30" min="1"></div>
       <div class="fg"><label>Subject Filter</label><select id="tSub"><option value="all">All Subjects</option></select></div>
 
       <!-- Answer Key for PDF test -->
@@ -347,7 +387,7 @@ input,textarea,select,button{font-family:inherit;}
 <!-- ===================== -->
 <!-- EXAM VIEW (SPLIT)     -->
 <!-- ===================== -->
-<div id="examView">
+<div id="examView" style="display: none;">
 
   <!-- Top bar -->
   <div class="exam-bar">
@@ -392,7 +432,7 @@ input,textarea,select,button{font-family:inherit;}
 </div>
 
 <!-- RESULT VIEW -->
-<div id="resultView">
+<div id="resultView" style="display: none;">
   <div class="scroll-body">
     <div style="padding:14px 16px 0;">
       <div class="result-hero">
@@ -423,7 +463,7 @@ input,textarea,select,button{font-family:inherit;}
 </div>
 
 <!-- BOTTOM NAV -->
-<div class="bottom-nav" id="bottomNav">
+<div class="bottom-nav" id="bottomNav" style="display: flex;">
   <div class="bnav-item active" id="bnav-add" onclick="goPage('add')"><span class="bnav-icon">➕</span>Add</div>
   <div class="bnav-item" id="bnav-bank" onclick="goPage('bank')"><span class="bnav-icon">📚</span>Bank</div>
   <div class="bnav-item" id="bnav-setup" onclick="goPage('setup')"><span class="bnav-icon">🎯</span>Test</div>
@@ -441,7 +481,7 @@ input,textarea,select,button{font-family:inherit;}
     <div class="popup-body">
       <div id="imgStep1">
         <div class="upload-area" onclick="document.getElementById('imgFileIn').click()">
-          <input type="file" id="imgFileIn" accept="image/*" style="display:none" onchange="onImgFilePicked(event)" capture="environment"/>
+          <input type="file" id="imgFileIn" accept="image/*" style="display:none" onchange="onImgFilePicked(event)" capture="environment">
           <div style="font-size:2.2rem;margin-bottom:8px;">📷</div>
           <h3>Camera / Gallery se select karein</h3>
           <p>JPG, PNG supported</p>
@@ -450,24 +490,24 @@ input,textarea,select,button{font-family:inherit;}
       <div id="imgStep2" style="display:none;">
         <div class="img-preview" id="imgPreviewBox"></div>
         <div style="height:14px;"></div>
-        <div class="fg"><label>Subject</label><input type="text" id="img_sub" placeholder="Subject..." /></div>
+        <div class="fg"><label>Subject</label><input type="text" id="img_sub" placeholder="Subject..."></div>
         <div class="fg"><label>Question *</label><textarea id="img_q" placeholder="Type question text..."></textarea></div>
         <div class="opts-grid">
-          <div class="opt-row"><div class="opt-badge" style="background:linear-gradient(135deg,#4f7fff,#7c3aed)">A</div><input type="text" id="img_a" placeholder="Option A" style="width:100%;padding:9px 10px;background:var(--s2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.86rem;" /></div>
-          <div class="opt-row"><div class="opt-badge" style="background:linear-gradient(135deg,#10b981,#059669)">B</div><input type="text" id="img_b" placeholder="Option B" style="width:100%;padding:9px 10px;background:var(--s2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.86rem;" /></div>
-          <div class="opt-row"><div class="opt-badge" style="background:linear-gradient(135deg,#f59e0b,#d97706)">C</div><input type="text" id="img_c" placeholder="Option C" style="width:100%;padding:9px 10px;background:var(--s2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.86rem;" /></div>
-          <div class="opt-row"><div class="opt-badge" style="background:linear-gradient(135deg,#ef4444,#dc2626)">D</div><input type="text" id="img_d" placeholder="Option D" style="width:100%;padding:9px 10px;background:var(--s2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.86rem;" /></div>
+          <div class="opt-row"><div class="opt-badge" style="background:linear-gradient(135deg,#4f7fff,#7c3aed)">A</div><input type="text" id="img_a" placeholder="Option A" style="width:100%;padding:9px 10px;background:var(--s2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.86rem;"></div>
+          <div class="opt-row"><div class="opt-badge" style="background:linear-gradient(135deg,#10b981,#059669)">B</div><input type="text" id="img_b" placeholder="Option B" style="width:100%;padding:9px 10px;background:var(--s2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.86rem;"></div>
+          <div class="opt-row"><div class="opt-badge" style="background:linear-gradient(135deg,#f59e0b,#d97706)">C</div><input type="text" id="img_c" placeholder="Option C" style="width:100%;padding:9px 10px;background:var(--s2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.86rem;"></div>
+          <div class="opt-row"><div class="opt-badge" style="background:linear-gradient(135deg,#ef4444,#dc2626)">D</div><input type="text" id="img_d" placeholder="Option D" style="width:100%;padding:9px 10px;background:var(--s2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.86rem;"></div>
         </div>
         <div class="correct-row">
           <div class="correct-row-top">
             <label>✅ Correct:</label>
             <select id="img_corr"><option>A</option><option>B</option><option>C</option><option>D</option></select>
-            <input class="explain-input" id="img_exp" placeholder="Explanation..." />
+            <input class="explain-input" id="img_exp" placeholder="Explanation...">
           </div>
           <div style="font-size:0.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:6px;">📎 Explanation Media</div>
           <div class="exp-media-row">
-            <label class="exp-media-btn"><input type="file" accept="image/*" multiple onchange="addExpMedia(event,'img')" />🖼️ Photos</label>
-            <label class="exp-media-btn"><input type="file" accept="application/pdf" multiple onchange="addExpMedia(event,'img')" />📄 PDFs</label>
+            <label class="exp-media-btn"><input type="file" accept="image/*" multiple="" onchange="addExpMedia(event,'img')">🖼️ Photos</label>
+            <label class="exp-media-btn"><input type="file" accept="application/pdf" multiple="" onchange="addExpMedia(event,'img')">📄 PDFs</label>
           </div>
           <div class="exp-thumb-row" id="imgExpThumbs"></div>
         </div>
@@ -493,29 +533,29 @@ input,textarea,select,button{font-family:inherit;}
       <button class="popup-close" onclick="closePopup('manualPopup')">✕</button>
     </div>
     <div class="popup-body">
-      <div class="fg"><label>Subject</label><input type="text" id="m_sub" placeholder="Math, Science..." /></div>
+      <div class="fg"><label>Subject</label><input type="text" id="m_sub" placeholder="Math, Science..."></div>
       <div class="fg"><label>Question *</label><textarea id="m_q" placeholder="Write your question..."></textarea></div>
       <div class="fg">
         <label>Question Image (optional)</label>
         <div id="mQImgPreview"></div>
-        <label class="exp-media-btn" style="margin-top:6px;"><input type="file" accept="image/*" onchange="setQImg(event)" />📷 Attach image</label>
+        <label class="exp-media-btn" style="margin-top:6px;"><input type="file" accept="image/*" onchange="setQImg(event)">📷 Attach image</label>
       </div>
       <div class="opts-grid">
-        <div class="opt-row"><div class="opt-badge" style="background:linear-gradient(135deg,#4f7fff,#7c3aed)">A</div><input type="text" id="m_a" placeholder="Option A" style="width:100%;padding:9px 11px;background:var(--s2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.88rem;" /></div>
-        <div class="opt-row"><div class="opt-badge" style="background:linear-gradient(135deg,#10b981,#059669)">B</div><input type="text" id="m_b" placeholder="Option B" style="width:100%;padding:9px 11px;background:var(--s2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.88rem;" /></div>
-        <div class="opt-row"><div class="opt-badge" style="background:linear-gradient(135deg,#f59e0b,#d97706)">C</div><input type="text" id="m_c" placeholder="Option C" style="width:100%;padding:9px 11px;background:var(--s2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.88rem;" /></div>
-        <div class="opt-row"><div class="opt-badge" style="background:linear-gradient(135deg,#ef4444,#dc2626)">D</div><input type="text" id="m_d" placeholder="Option D" style="width:100%;padding:9px 11px;background:var(--s2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.88rem;" /></div>
+        <div class="opt-row"><div class="opt-badge" style="background:linear-gradient(135deg,#4f7fff,#7c3aed)">A</div><input type="text" id="m_a" placeholder="Option A" style="width:100%;padding:9px 11px;background:var(--s2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.88rem;"></div>
+        <div class="opt-row"><div class="opt-badge" style="background:linear-gradient(135deg,#10b981,#059669)">B</div><input type="text" id="m_b" placeholder="Option B" style="width:100%;padding:9px 11px;background:var(--s2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.88rem;"></div>
+        <div class="opt-row"><div class="opt-badge" style="background:linear-gradient(135deg,#f59e0b,#d97706)">C</div><input type="text" id="m_c" placeholder="Option C" style="width:100%;padding:9px 11px;background:var(--s2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.88rem;"></div>
+        <div class="opt-row"><div class="opt-badge" style="background:linear-gradient(135deg,#ef4444,#dc2626)">D</div><input type="text" id="m_d" placeholder="Option D" style="width:100%;padding:9px 11px;background:var(--s2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.88rem;"></div>
       </div>
       <div class="correct-row">
         <div class="correct-row-top">
           <label>✅ Correct:</label>
           <select id="m_corr"><option>A</option><option>B</option><option>C</option><option>D</option></select>
-          <input class="explain-input" id="m_exp" placeholder="Explanation..." />
+          <input class="explain-input" id="m_exp" placeholder="Explanation...">
         </div>
         <div style="font-size:0.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:6px;">📎 Explanation Media</div>
         <div class="exp-media-row">
-          <label class="exp-media-btn"><input type="file" accept="image/*" multiple onchange="addExpMedia(event,'m')" />🖼️ Photos</label>
-          <label class="exp-media-btn"><input type="file" accept="application/pdf" multiple onchange="addExpMedia(event,'m')" />📄 PDFs</label>
+          <label class="exp-media-btn"><input type="file" accept="image/*" multiple="" onchange="addExpMedia(event,'m')">🖼️ Photos</label>
+          <label class="exp-media-btn"><input type="file" accept="application/pdf" multiple="" onchange="addExpMedia(event,'m')">📄 PDFs</label>
         </div>
         <div class="exp-thumb-row" id="mExpThumbs"></div>
       </div>
@@ -551,7 +591,7 @@ input,textarea,select,button{font-family:inherit;}
 <!-- Image Viewer -->
 <div class="img-viewer-overlay" id="imgViewer">
   <button class="iv-close" onclick="closeImgViewer()">✕</button>
-  <img id="ivImg" src="" />
+  <img id="ivImg" src="">
 </div>
 
 <div id="toast"></div>
@@ -1040,5 +1080,87 @@ function downloadApp(){
 function v(id){const el=document.getElementById(id);return el?el.value.trim():'';}
 function sv(id,val){const el=document.getElementById(id);if(el)el.value=val;}
 </script>
-</body>
-</html>
+
+<!-- PWA INSTALL BANNER (Android/Chrome) -->
+<div id="pwa-banner">
+  <div class="pwa-banner-inner">
+    <div class="pwa-banner-icon">🧠</div>
+    <div class="pwa-banner-text">
+      <h3>App Install Karein!</h3>
+      <p>Home screen pe add karein — bilkul app jaisa</p>
+    </div>
+  </div>
+  <div class="pwa-banner-btns">
+    <button class="pwa-install-btn" id="pwaInstallBtn">📲 Install Karein</button>
+    <button class="pwa-dismiss-btn" onclick="dismissBanner()">Baad mein</button>
+  </div>
+</div>
+
+<!-- iOS INSTALL GUIDE -->
+<div id="ios-guide">
+  <h3>📲 iPhone pe Install Karein</h3>
+  <div class="ios-steps">
+    <div class="ios-step"><span>⬆️</span>Share button dabayein</div>
+    <div class="ios-step"><span>➕</span>"Add to Home Screen" select karein</div>
+    <div class="ios-step"><span>✅</span>"Add" tap karein</div>
+  </div>
+  <button onclick="document.getElementById('ios-guide').classList.remove('show')">Samajh gaya ✓</button>
+</div>
+
+<script>
+/* ===== PWA / INSTALL LOGIC ===== */
+let deferredPrompt = null;
+const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+
+// Don't show if already installed
+if(!isStandalone) {
+  if(isIOS) {
+    // Show iOS guide after 2 seconds
+    setTimeout(()=>{ document.getElementById('ios-guide').classList.add('show'); }, 2000);
+  } else {
+    // Android/Chrome: wait for beforeinstallprompt
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      setTimeout(()=>{ document.getElementById('pwa-banner').classList.add('show'); }, 1500);
+    });
+  }
+}
+
+document.getElementById('pwaInstallBtn').addEventListener('click', async () => {
+  if(!deferredPrompt) return;
+  deferredPrompt.prompt();
+  const { outcome } = await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  document.getElementById('pwa-banner').classList.remove('show');
+  if(outcome === 'accepted') toast('✅ App install ho rahi hai!','success');
+});
+
+function dismissBanner(){
+  document.getElementById('pwa-banner').classList.remove('show');
+  localStorage.setItem('pwa_dismissed','1');
+}
+
+// Register Service Worker for offline support
+if('serviceWorker' in navigator){
+  const swCode = `
+const CACHE='smartmock-v1';
+const ASSETS=[self.location.href||'/'];
+self.addEventListener('install',e=>{
+  e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting()));
+});
+self.addEventListener('activate',e=>{
+  e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));
+});
+self.addEventListener('fetch',e=>{
+  e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).catch(()=>caches.match(e.request))));
+});
+  `;
+  const blob = new Blob([swCode],{type:'text/javascript'});
+  const swUrl = URL.createObjectURL(blob);
+  navigator.serviceWorker.register(swUrl).catch(()=>{});
+}
+</script>
+
+</body></html>
