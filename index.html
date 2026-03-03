@@ -319,6 +319,26 @@ input,textarea,select,button{font-family:inherit;}
 .weak-bar-fill{height:100%;border-radius:3px;}
 .weak-info{font-size:0.7rem;color:var(--muted);}
 
+/* ===== ANSWER KEY POPUP ===== */
+.ansk-opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px;}
+.ansk-btn{padding:14px 10px;border-radius:12px;border:2px solid var(--border);background:var(--s2);font-weight:800;font-size:1rem;cursor:pointer;transition:all .18s;display:flex;flex-direction:column;align-items:flex-start;gap:5px;}
+.ansk-btn:active{transform:scale(.96);}
+.ansk-btn .ansk-letter{font-size:1.1rem;font-weight:800;}
+.ansk-btn .ansk-text{font-size:0.75rem;font-weight:600;color:var(--muted);text-align:left;line-height:1.3;}
+.ansk-btn.sel-A{border-color:#4f7fff;background:rgba(79,127,255,.2);}.ansk-btn.sel-A .ansk-letter{color:#4f7fff;}
+.ansk-btn.sel-B{border-color:#10b981;background:rgba(16,185,129,.2);}.ansk-btn.sel-B .ansk-letter{color:#10b981;}
+.ansk-btn.sel-C{border-color:#f59e0b;background:rgba(245,158,11,.2);}.ansk-btn.sel-C .ansk-letter{color:#f59e0b;}
+.ansk-btn.sel-D{border-color:#ef4444;background:rgba(239,68,68,.2);}.ansk-btn.sel-D .ansk-letter{color:#ef4444;}
+
+/* ===== CATEGORY POPUP ===== */
+.cat-chips-wrap{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;}
+.cat-chip-btn{padding:8px 14px;border-radius:20px;border:2px solid var(--border);background:var(--s2);color:var(--text);font-size:0.82rem;font-weight:700;cursor:pointer;transition:all .15s;}
+.cat-chip-btn:active{transform:scale(.95);}
+.cat-chip-btn.selected{border-color:var(--acc);background:rgba(79,127,255,.18);color:var(--acc);}
+.cat-new-row{display:flex;gap:8px;margin-top:4px;}
+.cat-new-input{flex:1;padding:11px 13px;background:var(--s2);border:1px solid var(--border);border-radius:9px;color:var(--text);font-size:0.9rem;}
+.cat-new-input:focus{outline:none;border-color:var(--acc);}
+
 /* ===== PWA INSTALL BANNER ===== */
 #pwa-banner{
   position:fixed;bottom:0;left:0;right:0;z-index:99999;
@@ -371,6 +391,10 @@ input,textarea,select,button{font-family:inherit;}
       <div class="add-type-grid">
         <div class="add-type-btn img-btn" onclick="openImgPopup()"><span class="ico">🖼️</span><span>From Image</span></div>
         <div class="add-type-btn manual-btn" onclick="openManualPopup()"><span class="ico">✏️</span><span>Manual</span></div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:12px;">
+        <button class="btn btn-ghost btn-sm" onclick="importQ()">📥 Import</button>
+        <button class="btn btn-ghost btn-sm" onclick="exportQ()">📤 Export</button>
       </div>
     </div>
     <!-- PDF VIEWER CARD on Home Page -->
@@ -425,13 +449,11 @@ input,textarea,select,button{font-family:inherit;}
   <div class="page" id="page-bank">
     <div style="height:14px;"></div>
     <input type="text" class="search-bar" id="searchBar" placeholder="🔍 Search..." oninput="renderBank()">
-    <div style="display:flex;gap:8px;margin-bottom:12px;">
-      <button class="btn btn-ghost btn-sm btn-inline" onclick="exportQ()">📤 Export</button>
-      <button class="btn btn-ghost btn-sm btn-inline" onclick="importQ()">📥 Import</button>
-      <button class="btn btn-red btn-sm btn-inline" style="margin-left:auto;" onclick="clearAll()">🗑️ All</button>
-    </div>
     <div id="bankList"></div>
     <div style="height:20px;"></div>
+    <div style="text-align:center;padding-bottom:24px;">
+      <button onclick="clearAll()" style="background:none;border:none;color:var(--muted);font-size:0.72rem;cursor:pointer;text-decoration:underline;">Delete all questions</button>
+    </div>
   </div>
 
   <!-- SETUP PAGE -->
@@ -442,11 +464,11 @@ input,textarea,select,button{font-family:inherit;}
     <div class="card">
       <div class="card-head">📄 PDF for Test (optional)</div>
       <p style="font-size:0.78rem;color:var(--muted);margin-bottom:12px;">Upload a PDF — it will appear on top while questions are shown below during the test.</p>
-      <div class="upload-area" onclick="document.getElementById('testPdfIn').click()" id="pdfDropZone">
+      <div style="display:flex;align-items:center;gap:10px;">
         <input type="file" id="testPdfIn" accept="application/pdf" style="display:none" onchange="onTestPdfPicked(event)">
-        <div style="font-size:1.8rem;margin-bottom:6px;">📄</div>
-        <h3>Tap to select PDF</h3>
-        <p>Scroll and read during the test</p>
+        <button id="pdfDropZone" onclick="document.getElementById('testPdfIn').click()" style="display:flex;align-items:center;gap:8px;padding:11px 16px;background:var(--s2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:0.85rem;font-weight:700;cursor:pointer;">
+          <span style="font-size:1.4rem;">📄</span> Select PDF
+        </button>
       </div>
       <div id="testPdfChip" style="display:none;margin-top:10px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.3);border-radius:9px;padding:10px 13px;display:none;align-items:center;gap:10px;">
         <span style="font-size:1.2rem;">📄</span>
@@ -639,7 +661,7 @@ input,textarea,select,button{font-family:inherit;}
     <div class="popup-body">
       <div id="imgStep1">
         <div class="upload-area" onclick="document.getElementById('imgFileIn').click()">
-          <input type="file" id="imgFileIn" accept="image/*" style="display:none" onchange="onImgFilePicked(event)" capture="environment">
+          <input type="file" id="imgFileIn" accept="image/*" style="display:none" onchange="onImgFilePicked(event)">
           <div style="font-size:2.2rem;margin-bottom:8px;">📷</div>
           <h3>Select from Camera or Gallery</h3>
           <p>JPG, PNG supported</p>
@@ -648,7 +670,6 @@ input,textarea,select,button{font-family:inherit;}
       <div id="imgStep2" style="display:none;">
         <div class="img-preview" id="imgPreviewBox"></div>
         <div style="height:14px;"></div>
-        <div class="fg"><label>Subject</label><input type="text" id="img_sub" placeholder="Subject..."></div>
         <div class="fg"><label>Question *</label><textarea id="img_q" placeholder="Type question text..."></textarea></div>
         <div class="opts-grid">
           <div class="opt-row"><div class="opt-badge" style="background:linear-gradient(135deg,#4f7fff,#7c3aed)">A</div><input type="text" id="img_a" placeholder="Option A" style="width:100%;padding:9px 10px;background:var(--s2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.86rem;"></div>
@@ -656,18 +677,14 @@ input,textarea,select,button{font-family:inherit;}
           <div class="opt-row"><div class="opt-badge" style="background:linear-gradient(135deg,#f59e0b,#d97706)">C</div><input type="text" id="img_c" placeholder="Option C" style="width:100%;padding:9px 10px;background:var(--s2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.86rem;"></div>
           <div class="opt-row"><div class="opt-badge" style="background:linear-gradient(135deg,#ef4444,#dc2626)">D</div><input type="text" id="img_d" placeholder="Option D" style="width:100%;padding:9px 10px;background:var(--s2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.86rem;"></div>
         </div>
-        <div class="correct-row">
-          <div class="correct-row-top">
-            <label>✅ Correct:</label>
-            <select id="img_corr"><option>A</option><option>B</option><option>C</option><option>D</option></select>
-            <input class="explain-input" id="img_exp" placeholder="Explanation...">
-          </div>
-          <div style="font-size:0.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:6px;">📎 Explanation Media</div>
+        <div style="margin-top:10px;">
+          <div style="font-size:0.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">📎 Explanation Media</div>
           <div class="exp-media-row">
             <label class="exp-media-btn"><input type="file" accept="image/*" multiple="" onchange="addExpMedia(event,'img')">🖼️ Photos</label>
             <label class="exp-media-btn"><input type="file" accept="application/pdf" multiple="" onchange="addExpMedia(event,'img')">📄 PDFs</label>
           </div>
           <div class="exp-thumb-row" id="imgExpThumbs"></div>
+        </div>
         </div>
       </div>
     </div>
@@ -691,7 +708,6 @@ input,textarea,select,button{font-family:inherit;}
       <button class="popup-close" onclick="closePopup('manualPopup')">✕</button>
     </div>
     <div class="popup-body">
-      <div class="fg"><label>Subject</label><input type="text" id="m_sub" placeholder="Math, Science..."></div>
       <div class="fg"><label>Question *</label><textarea id="m_q" placeholder="Write your question..."></textarea></div>
       <div class="fg">
         <label>Question Image (optional)</label>
@@ -705,12 +721,7 @@ input,textarea,select,button{font-family:inherit;}
         <div class="opt-row"><div class="opt-badge" style="background:linear-gradient(135deg,#ef4444,#dc2626)">D</div><input type="text" id="m_d" placeholder="Option D" style="width:100%;padding:9px 11px;background:var(--s2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.88rem;"></div>
       </div>
       <div class="correct-row">
-        <div class="correct-row-top">
-          <label>✅ Correct:</label>
-          <select id="m_corr"><option>A</option><option>B</option><option>C</option><option>D</option></select>
-          <input class="explain-input" id="m_exp" placeholder="Explanation...">
-        </div>
-        <div style="font-size:0.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:6px;">📎 Explanation Media</div>
+        <div style="font-size:0.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">📎 Explanation Media</div>
         <div class="exp-media-row">
           <label class="exp-media-btn"><input type="file" accept="image/*" multiple="" onchange="addExpMedia(event,'m')">🖼️ Photos</label>
           <label class="exp-media-btn"><input type="file" accept="application/pdf" multiple="" onchange="addExpMedia(event,'m')">📄 PDFs</label>
@@ -742,6 +753,53 @@ input,textarea,select,button{font-family:inherit;}
     </div>
     <div class="popup-footer">
       <button class="btn btn-green" onclick="saveSetupAnsKey()">✅ Save Answer Key</button>
+    </div>
+  </div>
+</div>
+
+<!-- POPUP: ANSWER KEY -->
+<div class="popup-overlay" id="ansKeyPopup">
+  <div class="popup-sheet">
+    <div class="popup-handle"></div>
+    <div class="popup-header">
+      <span style="font-size:1.2rem">✅</span>
+      <span class="popup-title">Which is Correct?</span>
+    </div>
+    <div class="popup-body">
+      <div style="font-size:0.78rem;color:var(--muted);margin-bottom:4px;">Tap the correct answer</div>
+      <div class="ansk-opts" id="ansKeyBtns"></div>
+      <div class="fg" style="margin-top:14px;">
+        <label>Explanation (optional)</label>
+        <textarea id="pendingExp" placeholder="Why is this the correct answer..." style="min-height:60px;"></textarea>
+      </div>
+    </div>
+    <div class="popup-footer">
+      <button class="btn btn-primary" onclick="ansKeyDone()">➡️ Next: Category</button>
+    </div>
+  </div>
+</div>
+
+<!-- POPUP: CATEGORY SELECT -->
+<div class="popup-overlay" id="catPopup">
+  <div class="popup-sheet">
+    <div class="popup-handle"></div>
+    <div class="popup-header">
+      <span style="font-size:1.2rem">🏷️</span>
+      <span class="popup-title">Select Category</span>
+      <button class="popup-close" onclick="catPopupCancel()">✕</button>
+    </div>
+    <div class="popup-body">
+      <div style="font-size:0.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">Existing Categories</div>
+      <div class="cat-chips-wrap" id="catChips"></div>
+      <div style="font-size:0.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Or Add New</div>
+      <div class="cat-new-row">
+        <input class="cat-new-input" id="catNewInput" placeholder="e.g. Science, History..." />
+        <button class="btn btn-ghost btn-sm btn-inline" onclick="catSelectNew()">+ Add</button>
+      </div>
+    </div>
+    <div class="popup-footer">
+      <button class="btn btn-primary" onclick="catPopupDone()">✅ Save Question</button>
+      <button class="btn btn-ghost" style="margin-top:8px;" onclick="catPopupSkip()">Skip — No Category</button>
     </div>
   </div>
 </div>
@@ -943,11 +1001,16 @@ function onImgFilePicked(e){
 function saveImgQ(withImg){
   const q=v('img_q'),A=v('img_a'),B=v('img_b'),C=v('img_c'),D=v('img_d');
   if(!q||!A||!B||!C||!D){toast('Please fill all fields!','error');return;}
-  questions.push({id:Date.now(),qText:q,options:{A,B,C,D},correct:v('img_corr'),subject:v('img_sub'),explanation:v('img_exp'),expMedia:[...imgExpMedia],image:withImg?imgPickedData:null});
-  save();toast('✅ Saved!','success');resetImgForm();
+  pendingQ={id:Date.now(),qText:q,options:{A,B,C,D},correct:'',subject:'',explanation:'',expMedia:[...imgExpMedia],image:withImg?imgPickedData:null};
+  openAnsKeyPopup(()=>{
+    openCatPopup(()=>{
+      questions.push(pendingQ);save();toast('✅ Saved!','success');
+      closePopup('imgPopup');resetImgFormFull();
+    });
+  });
 }
 function resetImgForm(){
-  ['img_q','img_a','img_b','img_c','img_d','img_exp','img_sub'].forEach(id=>sv(id,''));
+  ['img_q','img_a','img_b','img_c','img_d'].forEach(id=>sv(id,''));
   sv('img_corr','A');imgExpMedia=[];renderExpThumbs('img','imgExpThumbs');
 }
 function resetImgFormFull(){
@@ -974,11 +1037,16 @@ function renderMQImgPreview(){
 function addManual(){
   const q=v('m_q'),A=v('m_a'),B=v('m_b'),C=v('m_c'),D=v('m_d');
   if(!q||!A||!B||!C||!D){toast('Please fill all fields!','error');return;}
-  questions.push({id:Date.now(),qText:q,options:{A,B,C,D},correct:v('m_corr'),subject:v('m_sub'),explanation:v('m_exp'),expMedia:[...mExpMedia],image:mQImgData});
-  save();toast('✅ Added!','success');clearManual();
+  pendingQ={id:Date.now(),qText:q,options:{A,B,C,D},correct:'',subject:'',explanation:'',expMedia:[...mExpMedia],image:mQImgData};
+  openAnsKeyPopup(()=>{
+    openCatPopup(()=>{
+      questions.push(pendingQ);save();toast('✅ Added!','success');
+      closePopup('manualPopup');clearManual();
+    });
+  });
 }
 function clearManual(){
-  ['m_sub','m_q','m_a','m_b','m_c','m_d','m_exp'].forEach(id=>sv(id,''));
+  ['m_q','m_a','m_b','m_c','m_d'].forEach(id=>sv(id,''));
   sv('m_corr','A');mQImgData=null;mExpMedia=[];
   renderMQImgPreview();renderExpThumbs('m','mExpThumbs');
 }
@@ -1047,6 +1115,105 @@ function updateSubjectSel(){
   const subs=[...new Set(questions.map(q=>q.subject).filter(Boolean))];
   sel.innerHTML='<option value="all">All Subjects</option>';
   subs.forEach(s=>sel.innerHTML+=`<option value="${s}">${s}</option>`);
+}
+
+/* ===== ANSWER KEY POPUP ===== */
+let ansKeyCallback = null;
+let selectedAns = '';
+
+function openAnsKeyPopup(onDone){
+  ansKeyCallback = onDone;
+  selectedAns = '';
+  document.getElementById('pendingExp').value = '';
+  renderAnsKeyBtns();
+  openPopup('ansKeyPopup');
+}
+
+function renderAnsKeyBtns(){
+  const opts = pendingQ ? pendingQ.options : {A:'',B:'',C:'',D:''};
+  document.getElementById('ansKeyBtns').innerHTML = ['A','B','C','D'].map(k=>`
+    <button class="ansk-btn${selectedAns===k?' sel-'+k:''}" onclick="selectAns('${k}')">
+      <span class="ansk-letter">${k}</span>
+      <span class="ansk-text">${opts[k]||''}</span>
+    </button>
+  `).join('');
+}
+
+function selectAns(opt){
+  selectedAns = opt;
+  renderAnsKeyBtns();
+}
+
+function ansKeyDone(){
+  if(!selectedAns){toast('Please select the correct answer','error');return;}
+  if(pendingQ){
+    pendingQ.correct = selectedAns;
+    pendingQ.explanation = document.getElementById('pendingExp').value.trim();
+  }
+  closePopup('ansKeyPopup');
+  if(ansKeyCallback) ansKeyCallback();
+  ansKeyCallback = null;
+}
+
+/* ===== CATEGORY POPUP ===== */
+let pendingQ = null;
+let catDoneCallback = null;
+let selectedCat = '';
+
+function openCatPopup(onDone){
+  catDoneCallback = onDone;
+  selectedCat = '';
+  document.getElementById('catNewInput').value = '';
+  renderCatChips();
+  openPopup('catPopup');
+}
+
+function renderCatChips(){
+  const subs = [...new Set(questions.map(q=>q.subject).filter(Boolean))];
+  const wrap = document.getElementById('catChips');
+  if(!subs.length){
+    wrap.innerHTML = '<div style="color:var(--muted);font-size:0.78rem;">No categories yet — add one below</div>';
+    return;
+  }
+  wrap.innerHTML = subs.map(s=>`
+    <button class="cat-chip-btn${selectedCat===s?' selected':''}" onclick="catSelect('${s}')">${s}</button>
+  `).join('');
+}
+
+function catSelect(sub){
+  selectedCat = sub;
+  document.getElementById('catNewInput').value = '';
+  renderCatChips();
+}
+
+function catSelectNew(){
+  const val = document.getElementById('catNewInput').value.trim();
+  if(!val){toast('Please type a category name','error');return;}
+  selectedCat = val;
+  renderCatChips();
+  // highlight new input visually
+  document.getElementById('catNewInput').style.borderColor = 'var(--acc)';
+}
+
+function catPopupDone(){
+  const typed = document.getElementById('catNewInput').value.trim();
+  const cat = typed || selectedCat;
+  if(pendingQ) pendingQ.subject = cat;
+  closePopup('catPopup');
+  if(catDoneCallback) catDoneCallback();
+  catDoneCallback = null; pendingQ = null; selectedCat = '';
+}
+
+function catPopupSkip(){
+  if(pendingQ) pendingQ.subject = '';
+  closePopup('catPopup');
+  if(catDoneCallback) catDoneCallback();
+  catDoneCallback = null; pendingQ = null; selectedCat = '';
+}
+
+function catPopupCancel(){
+  closePopup('catPopup');
+  catDoneCallback = null; pendingQ = null; selectedCat = '';
 }
 
 /* ===== EXPORT / IMPORT ===== */
