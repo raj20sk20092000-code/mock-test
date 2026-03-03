@@ -412,7 +412,15 @@ input,textarea,select,button{font-family:inherit;}
         <span>Koi PDF load nahi hai</span>
         <span style="font-size:0.7rem;">Setup mein PDF upload karein</span>
       </div>
-      <iframe id="pdfFrame" style="display:none;width:100%;height:100%;border:none;"></iframe>
+      <div id="pdfViewer" style="display:none;width:100%;height:100%;overflow-y:auto;background:#1a1a2e;-webkit-overflow-scrolling:touch;">
+        <div style="display:flex;align-items:center;justify-content:center;gap:10px;padding:6px 10px;background:rgba(0,0,0,.6);position:sticky;top:0;z-index:10;">
+          <button onclick="pdfPrevPage()" style="background:#222736;border:1px solid #2c3148;color:#e2e6f0;border-radius:7px;padding:5px 14px;font-size:0.8rem;font-weight:700;cursor:pointer;">◀ Prev</button>
+          <span id="pdfPageInfo" style="font-size:0.75rem;color:#e2e6f0;font-weight:700;min-width:70px;text-align:center;">1 / 1</span>
+          <button onclick="pdfNextPage()" style="background:#222736;border:1px solid #2c3148;color:#e2e6f0;border-radius:7px;padding:5px 14px;font-size:0.8rem;font-weight:700;cursor:pointer;">Next ▶</button>
+        </div>
+        <canvas id="pdfCanvas" style="display:block;width:100%;"></canvas>
+      </div>
+      <iframe id="pdfFrame" style="display:none;"></iframe>
     </div>
 
     <!-- Resize handle -->
@@ -924,31 +932,15 @@ function startExam(){
   document.getElementById('examView').style.height='calc(100vh - var(--sat) - var(--sab))';
   document.getElementById('resultView').style.display='none';
 
-  // Load PDF using Blob URL (fixes Chrome/Android iframe block issue)
-  const frame=document.getElementById('pdfFrame');
+  // Load PDF using PDF.js (works on Android Chrome)
   const noFile=document.getElementById('pdfNoFile');
+  const pdfViewer=document.getElementById('pdfViewer');
   if(testPdfData){
-    try{
-      if(frame._blobUrl){URL.revokeObjectURL(frame._blobUrl);}
-      const b64=testPdfData.split(',')[1];
-      const bin=atob(b64);
-      const arr=new Uint8Array(bin.length);
-      for(let i=0;i<bin.length;i++)arr[i]=bin.charCodeAt(i);
-      const blob=new Blob([arr],{type:'application/pdf'});
-      const blobUrl=URL.createObjectURL(blob);
-      frame._blobUrl=blobUrl;
-      frame.src=blobUrl;
-      frame.style.display='block';
-      noFile.style.display='none';
-    }catch(e){
-      frame.style.display='none';
-      noFile.innerHTML=`<span style="font-size:2rem">📄</span><span style="font-size:0.85rem;color:var(--text);margin:4px 0">PDF preview nahi chala</span><button class="btn btn-primary" style="margin-top:8px;width:auto;padding:9px 18px;" onclick="openPdfBlob(testPdfData)">📂 PDF Alag Tab mein Kholein</button>`;
-      noFile.style.display='flex';
-      noFile.style.flexDirection='column';
-      noFile.style.alignItems='center';
-    }
+    noFile.style.display='none';
+    pdfViewer.style.display='block';
+    loadPdfJs(testPdfData);
   } else {
-    frame.style.display='none';
+    pdfViewer.style.display='none';
     noFile.style.display='flex';
   }
 
@@ -1008,7 +1000,7 @@ function submitExam(ask){
   const total=testQ.length,pct=Math.round(c/total*100);
 
   document.getElementById('examView').style.display='none';
-  document.getElementById('pdfFrame').src='';
+  document.getElementById('pdfFrame').src=''; document.getElementById('pdfViewer').style.display='none';
   document.getElementById('resultView').style.display='block';
   document.getElementById('scrollBody').style.display='block';
   document.getElementById('bottomNav').style.display='none';
@@ -1090,6 +1082,88 @@ function downloadApp(){
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);
   a.download='SmartMockTest.html';a.click();
   URL.revokeObjectURL(a.href);toast('✅ Downloading...','success');
+}
+
+/* ===== PDF.js VIEWER ===== */
+let pdfDoc=null, pdfPage=1, pdfTotal=1, pdfRendering=false;
+
+function loadPdfJs(dataUrl){
+  if(!window.pdfjsLib){
+    // Load PDF.js from CDN first
+    const script=document.createElement('script');
+    script.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+    script.onload=()=>{
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      renderPdfFromData(dataUrl);
+    };
+    script.onerror=()=>showPdfFallback();
+    document.head.appendChild(script);
+  } else {
+    renderPdfFromData(dataUrl);
+  }
+}
+
+function renderPdfFromData(dataUrl){
+  const canvas=document.getElementById('pdfCanvas');
+  if(!canvas) return;
+  canvas.innerHTML='';
+  // Show loading
+  const noFile=document.getElementById('pdfNoFile');
+  const viewer=document.getElementById('pdfViewer');
+  
+  const b64=dataUrl.split(',')[1];
+  const bin=atob(b64);
+  const arr=new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++) arr[i]=bin.charCodeAt(i);
+  
+  pdfjsLib.getDocument({data:arr}).promise.then(pdf=>{
+    pdfDoc=pdf; pdfPage=1; pdfTotal=pdf.numPages;
+    document.getElementById('pdfPageInfo').textContent='1 / '+pdfTotal;
+    renderPdfPage(1);
+  }).catch(()=>showPdfFallback());
+}
+
+function renderPdfPage(num){
+  if(!pdfDoc||pdfRendering) return;
+  pdfRendering=true;
+  pdfDoc.getPage(num).then(page=>{
+    const canvas=document.getElementById('pdfCanvas');
+    const ctx=canvas.getContext('2d');
+    const containerW=canvas.parentElement.clientWidth||350;
+    const viewport=page.getViewport({scale:1});
+    const scale=containerW/viewport.width;
+    const scaledViewport=page.getViewport({scale});
+    canvas.width=scaledViewport.width;
+    canvas.height=scaledViewport.height;
+    canvas.style.width='100%';
+    page.render({canvasContext:ctx,viewport:scaledViewport}).promise.then(()=>{
+      pdfRendering=false;
+      document.getElementById('pdfPageInfo').textContent=num+' / '+pdfTotal;
+      // Scroll to top of viewer
+      document.getElementById('pdfViewer').scrollTop=0;
+    });
+  });
+}
+
+function pdfPrevPage(){
+  if(pdfPage<=1) return;
+  pdfPage--;
+  renderPdfPage(pdfPage);
+}
+
+function pdfNextPage(){
+  if(pdfPage>=pdfTotal) return;
+  pdfPage++;
+  renderPdfPage(pdfPage);
+}
+
+function showPdfFallback(){
+  const viewer=document.getElementById('pdfViewer');
+  viewer.innerHTML=`<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:12px;padding:20px;">
+    <span style="font-size:2.5rem">📄</span>
+    <span style="font-size:0.85rem;color:#e2e6f0;text-align:center;">PDF preview ke liye internet chahiye pehli baar</span>
+    <button onclick="openPdfBlob(testPdfData)" style="padding:10px 20px;background:linear-gradient(135deg,#4f7fff,#7c3aed);color:white;border:none;border-radius:9px;font-weight:700;font-size:0.85rem;cursor:pointer;">📂 PDF Alag Tab mein Kholein</button>
+  </div>`;
 }
 
 /* ===== UTILS ===== */
