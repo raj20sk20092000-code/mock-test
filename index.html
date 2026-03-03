@@ -313,6 +313,37 @@ input,textarea,select,button{font-family:inherit;}
         <div class="add-type-btn manual-btn" onclick="openManualPopup()"><span class="ico">✏️</span><span>Manual</span></div>
       </div>
     </div>
+    <!-- PDF VIEWER CARD on Home Page -->
+    <div class="card" id="homePdfCard">
+      <div class="card-head" style="margin-bottom:10px;">📄 PDF Viewer</div>
+      <div id="homePdfEmpty" style="text-align:center;padding:18px 0;">
+        <div style="font-size:2.2rem;margin-bottom:8px;opacity:.4;">📄</div>
+        <p style="font-size:0.78rem;color:var(--muted);margin-bottom:12px;">PDF upload karein — yahan padh sakte hain</p>
+        <label style="display:inline-flex;align-items:center;gap:7px;padding:10px 18px;background:linear-gradient(135deg,var(--acc),var(--acc2));color:white;border-radius:10px;font-size:0.83rem;font-weight:700;cursor:pointer;">
+          📂 PDF Kholein
+          <input type="file" accept="application/pdf" style="display:none" onchange="loadHomePdf(event)">
+        </label>
+      </div>
+      <div id="homePdfViewer" style="display:none;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
+          <span id="homePdfName" style="flex:1;font-size:0.75rem;color:var(--acc);font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+          <button onclick="clearHomePdf()" style="background:var(--red);color:white;border:none;border-radius:7px;padding:4px 10px;font-size:0.72rem;font-weight:700;cursor:pointer;">✕ Hatao</button>
+        </div>
+        <!-- Page nav -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <button onclick="homePdfPrev()" id="homePdfPrevBtn" style="background:var(--s3);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:7px 16px;font-size:0.8rem;font-weight:700;cursor:pointer;">◀ Prev</button>
+          <span id="homePdfPageInfo" style="font-size:0.78rem;color:var(--muted);font-weight:700;">1 / 1</span>
+          <button onclick="homePdfNext()" id="homePdfNextBtn" style="background:var(--s3);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:7px 16px;font-size:0.8rem;font-weight:700;cursor:pointer;">Next ▶</button>
+        </div>
+        <!-- Canvas -->
+        <div style="border-radius:10px;overflow:hidden;border:1px solid var(--border);background:#fff;line-height:0;">
+          <canvas id="homePdfCanvas" style="display:block;width:100%;"></canvas>
+        </div>
+        <!-- Use in test button -->
+        <button onclick="useHomePdfInTest()" style="width:100%;margin-top:10px;padding:10px;background:rgba(79,127,255,.15);border:1px solid var(--acc);color:var(--acc);border-radius:9px;font-size:0.82rem;font-weight:700;cursor:pointer;">🎯 Is PDF ko Test mein Use Karein</button>
+      </div>
+    </div>
+
     <div class="card" id="addPageStats" style="display:none;">
       <div class="card-head" style="margin-bottom:8px;">📊 Bank Stats</div>
       <div class="stat-row" id="addStatRow"></div>
@@ -413,12 +444,12 @@ input,textarea,select,button{font-family:inherit;}
         <span style="font-size:0.7rem;">Setup mein PDF upload karein</span>
       </div>
       <div id="pdfViewer" style="display:none;width:100%;height:100%;overflow-y:auto;background:#1a1a2e;-webkit-overflow-scrolling:touch;">
-        <div style="display:flex;align-items:center;justify-content:center;gap:10px;padding:6px 10px;background:rgba(0,0,0,.6);position:sticky;top:0;z-index:10;">
-          <button onclick="pdfPrevPage()" style="background:#222736;border:1px solid #2c3148;color:#e2e6f0;border-radius:7px;padding:5px 14px;font-size:0.8rem;font-weight:700;cursor:pointer;">◀ Prev</button>
-          <span id="pdfPageInfo" style="font-size:0.75rem;color:#e2e6f0;font-weight:700;min-width:70px;text-align:center;">1 / 1</span>
-          <button onclick="pdfNextPage()" style="background:#222736;border:1px solid #2c3148;color:#e2e6f0;border-radius:7px;padding:5px 14px;font-size:0.8rem;font-weight:700;cursor:pointer;">Next ▶</button>
+        <div style="display:flex;align-items:center;justify-content:center;gap:8px;padding:5px 10px;background:rgba(0,0,0,.7);position:sticky;top:0;z-index:10;">
+          <button onclick="examPdfPrev()" style="background:#222736;border:1px solid #2c3148;color:#e2e6f0;border-radius:7px;padding:5px 12px;font-size:0.78rem;font-weight:700;cursor:pointer;">◀</button>
+          <span id="examPdfPageInfo" style="font-size:0.73rem;color:#e2e6f0;font-weight:700;min-width:60px;text-align:center;">1 / 1</span>
+          <button onclick="examPdfNext()" style="background:#222736;border:1px solid #2c3148;color:#e2e6f0;border-radius:7px;padding:5px 12px;font-size:0.78rem;font-weight:700;cursor:pointer;">▶</button>
         </div>
-        <canvas id="pdfCanvas" style="display:block;width:100%;"></canvas>
+        <canvas id="examPdfCanvas" style="display:block;"></canvas>
       </div>
       <iframe id="pdfFrame" style="display:none;"></iframe>
     </div>
@@ -932,17 +963,8 @@ function startExam(){
   document.getElementById('examView').style.height='calc(100vh - var(--sat) - var(--sab))';
   document.getElementById('resultView').style.display='none';
 
-  // Load PDF using PDF.js (works on Android Chrome)
-  const noFile=document.getElementById('pdfNoFile');
-  const pdfViewer=document.getElementById('pdfViewer');
-  if(testPdfData){
-    noFile.style.display='none';
-    pdfViewer.style.display='block';
-    loadPdfJs(testPdfData);
-  } else {
-    pdfViewer.style.display='none';
-    noFile.style.display='flex';
-  }
+  // Load PDF using PDF.js
+  loadExamPdf(testPdfData);
 
   renderExamQ();renderDots();
   if(timerInt)clearInterval(timerInt);
@@ -1000,7 +1022,7 @@ function submitExam(ask){
   const total=testQ.length,pct=Math.round(c/total*100);
 
   document.getElementById('examView').style.display='none';
-  document.getElementById('pdfFrame').src=''; document.getElementById('pdfViewer').style.display='none';
+  document.getElementById('pdfViewer').style.display='none'; examPdf={doc:null,page:1,total:1,rendering:false};
   document.getElementById('resultView').style.display='block';
   document.getElementById('scrollBody').style.display='block';
   document.getElementById('bottomNav').style.display='none';
@@ -1084,87 +1106,144 @@ function downloadApp(){
   URL.revokeObjectURL(a.href);toast('✅ Downloading...','success');
 }
 
-/* ===== PDF.js VIEWER ===== */
-let pdfDoc=null, pdfPage=1, pdfTotal=1, pdfRendering=false;
+/* ===== PDF.js VIEWER (Home + Exam) ===== */
+let pdfLibLoaded = false;
+let homePdf = { doc:null, page:1, total:1, rendering:false, data:null, name:'' };
+let examPdf = { doc:null, page:1, total:1, rendering:false };
 
-function loadPdfJs(dataUrl){
-  if(!window.pdfjsLib){
-    // Load PDF.js from CDN first
-    const script=document.createElement('script');
-    script.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
-    script.onload=()=>{
-      window.pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-      renderPdfFromData(dataUrl);
-    };
-    script.onerror=()=>showPdfFallback();
-    document.head.appendChild(script);
-  } else {
-    renderPdfFromData(dataUrl);
-  }
+function ensurePdfJs(cb) {
+  if (window.pdfjsLib) { cb(); return; }
+  const s = document.createElement('script');
+  s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+  s.onload = () => {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    cb();
+  };
+  s.onerror = () => toast('PDF.js load nahi hua — internet check karein','error');
+  document.head.appendChild(s);
 }
 
-function renderPdfFromData(dataUrl){
-  const canvas=document.getElementById('pdfCanvas');
-  if(!canvas) return;
-  canvas.innerHTML='';
-  // Show loading
-  const noFile=document.getElementById('pdfNoFile');
-  const viewer=document.getElementById('pdfViewer');
-  
-  const b64=dataUrl.split(',')[1];
-  const bin=atob(b64);
-  const arr=new Uint8Array(bin.length);
-  for(let i=0;i<bin.length;i++) arr[i]=bin.charCodeAt(i);
-  
-  pdfjsLib.getDocument({data:arr}).promise.then(pdf=>{
-    pdfDoc=pdf; pdfPage=1; pdfTotal=pdf.numPages;
-    document.getElementById('pdfPageInfo').textContent='1 / '+pdfTotal;
-    renderPdfPage(1);
-  }).catch(()=>showPdfFallback());
+function dataUrlToUint8(dataUrl) {
+  const b64 = dataUrl.split(',')[1];
+  const bin = atob(b64);
+  const arr = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+  return arr;
 }
 
-function renderPdfPage(num){
-  if(!pdfDoc||pdfRendering) return;
-  pdfRendering=true;
-  pdfDoc.getPage(num).then(page=>{
-    const canvas=document.getElementById('pdfCanvas');
-    const ctx=canvas.getContext('2d');
-    const containerW=canvas.parentElement.clientWidth||350;
-    const viewport=page.getViewport({scale:1});
-    const scale=containerW/viewport.width;
-    const scaledViewport=page.getViewport({scale});
-    canvas.width=scaledViewport.width;
-    canvas.height=scaledViewport.height;
-    canvas.style.width='100%';
-    page.render({canvasContext:ctx,viewport:scaledViewport}).promise.then(()=>{
-      pdfRendering=false;
-      document.getElementById('pdfPageInfo').textContent=num+' / '+pdfTotal;
-      // Scroll to top of viewer
-      document.getElementById('pdfViewer').scrollTop=0;
+function renderPageOnCanvas(pdfObj, canvasId, pageInfoId, cb) {
+  if (!pdfObj.doc || pdfObj.rendering) return;
+  pdfObj.rendering = true;
+  pdfObj.doc.getPage(pdfObj.page).then(page => {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) { pdfObj.rendering = false; return; }
+    const dpr = window.devicePixelRatio || 2;
+    const containerW = canvas.parentElement.clientWidth || window.innerWidth;
+    const vp0 = page.getViewport({ scale: 1 });
+    const scale = (containerW / vp0.width) * dpr;
+    const vp = page.getViewport({ scale });
+    canvas.width = vp.width;
+    canvas.height = vp.height;
+    canvas.style.width = containerW + 'px';
+    canvas.style.height = Math.round(vp.height / dpr) + 'px';
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    page.render({ canvasContext: ctx, viewport: vp }).promise.then(() => {
+      pdfObj.rendering = false;
+      if (pageInfoId) document.getElementById(pageInfoId).textContent = pdfObj.page + ' / ' + pdfObj.total;
+      if (cb) cb();
     });
   });
 }
 
-function pdfPrevPage(){
-  if(pdfPage<=1) return;
-  pdfPage--;
-  renderPdfPage(pdfPage);
+/* ---- HOME PAGE PDF ---- */
+function loadHomePdf(e) {
+  const f = e.target.files[0]; if (!f) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const dataUrl = ev.target.result;
+    homePdf.data = dataUrl;
+    homePdf.name = f.name;
+    // Save to localStorage
+    try { localStorage.setItem('smt_home_pdf_data', dataUrl); localStorage.setItem('smt_home_pdf_name', f.name); } catch(err) {}
+    initHomePdf(dataUrl, f.name);
+  };
+  reader.readAsDataURL(f);
 }
 
-function pdfNextPage(){
-  if(pdfPage>=pdfTotal) return;
-  pdfPage++;
-  renderPdfPage(pdfPage);
+function initHomePdf(dataUrl, name) {
+  document.getElementById('homePdfEmpty').style.display = 'none';
+  document.getElementById('homePdfViewer').style.display = 'block';
+  document.getElementById('homePdfName').textContent = name || 'PDF';
+  document.getElementById('homePdfPageInfo').textContent = 'Loading...';
+  ensurePdfJs(() => {
+    const arr = dataUrlToUint8(dataUrl);
+    pdfjsLib.getDocument({ data: arr }).promise.then(pdf => {
+      homePdf.doc = pdf; homePdf.page = 1; homePdf.total = pdf.numPages; homePdf.rendering = false;
+      renderPageOnCanvas(homePdf, 'homePdfCanvas', 'homePdfPageInfo', null);
+    }).catch(() => toast('PDF open nahi hua','error'));
+  });
 }
 
-function showPdfFallback(){
-  const viewer=document.getElementById('pdfViewer');
-  viewer.innerHTML=`<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:12px;padding:20px;">
-    <span style="font-size:2.5rem">📄</span>
-    <span style="font-size:0.85rem;color:#e2e6f0;text-align:center;">PDF preview ke liye internet chahiye pehli baar</span>
-    <button onclick="openPdfBlob(testPdfData)" style="padding:10px 20px;background:linear-gradient(135deg,#4f7fff,#7c3aed);color:white;border:none;border-radius:9px;font-weight:700;font-size:0.85rem;cursor:pointer;">📂 PDF Alag Tab mein Kholein</button>
-  </div>`;
+function homePdfPrev() {
+  if (homePdf.page <= 1) return;
+  homePdf.page--; renderPageOnCanvas(homePdf, 'homePdfCanvas', 'homePdfPageInfo', null);
 }
+function homePdfNext() {
+  if (homePdf.page >= homePdf.total) return;
+  homePdf.page++; renderPageOnCanvas(homePdf, 'homePdfCanvas', 'homePdfPageInfo', null);
+}
+
+function clearHomePdf() {
+  homePdf = { doc:null, page:1, total:1, rendering:false, data:null, name:'' };
+  try { localStorage.removeItem('smt_home_pdf_data'); localStorage.removeItem('smt_home_pdf_name'); } catch(e){}
+  document.getElementById('homePdfEmpty').style.display = 'block';
+  document.getElementById('homePdfViewer').style.display = 'none';
+  document.getElementById('homePdfCanvas').width = 0;
+}
+
+function useHomePdfInTest() {
+  if (!homePdf.data) return;
+  testPdfData = homePdf.data;
+  document.getElementById('testPdfName').textContent = homePdf.name;
+  document.getElementById('testPdfChip').style.display = 'flex';
+  document.getElementById('ansKeySetupBox').style.display = 'block';
+  document.getElementById('pdfDropZone').style.display = 'none';
+  goPage('setup');
+  toast('✅ PDF Test mein set ho gaya!','success');
+}
+
+// Restore saved PDF on load
+(function restoreHomePdf(){
+  try {
+    const data = localStorage.getItem('smt_home_pdf_data');
+    const name = localStorage.getItem('smt_home_pdf_name');
+    if (data && name) { homePdf.data = data; homePdf.name = name; initHomePdf(data, name); }
+  } catch(e) {}
+})();
+
+/* ---- EXAM PDF ---- */
+function loadExamPdf(dataUrl) {
+  const viewer = document.getElementById('pdfViewer');
+  const noFile = document.getElementById('pdfNoFile');
+  if (!dataUrl) { viewer.style.display='none'; noFile.style.display='flex'; return; }
+  noFile.style.display = 'none';
+  viewer.style.display = 'block';
+  document.getElementById('examPdfPageInfo').textContent = 'Loading...';
+  ensurePdfJs(() => {
+    const arr = dataUrlToUint8(dataUrl);
+    pdfjsLib.getDocument({ data: arr }).promise.then(pdf => {
+      examPdf.doc = pdf; examPdf.page = 1; examPdf.total = pdf.numPages; examPdf.rendering = false;
+      renderPageOnCanvas(examPdf, 'examPdfCanvas', 'examPdfPageInfo', null);
+    }).catch(() => {
+      viewer.style.display='none';
+      noFile.innerHTML = `<span style="font-size:2rem">📄</span><span style="margin:6px 0;font-size:0.82rem;">PDF load nahi hua</span><button onclick="openPdfBlob(testPdfData)" style="padding:9px 18px;background:linear-gradient(135deg,var(--acc),var(--acc2));color:white;border:none;border-radius:9px;font-weight:700;cursor:pointer;">📂 Alag Tab mein Kholein</button>`;
+      noFile.style.display='flex'; noFile.style.flexDirection='column'; noFile.style.alignItems='center'; noFile.style.gap='8px';
+    });
+  });
+}
+function examPdfPrev() { if(examPdf.page<=1)return; examPdf.page--; renderPageOnCanvas(examPdf,'examPdfCanvas','examPdfPageInfo',null); }
+function examPdfNext() { if(examPdf.page>=examPdf.total)return; examPdf.page++; renderPageOnCanvas(examPdf,'examPdfCanvas','examPdfPageInfo',null); }
 
 /* ===== UTILS ===== */
 function v(id){const el=document.getElementById(id);return el?el.value.trim():'';}
