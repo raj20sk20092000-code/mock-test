@@ -1,713 +1,337 @@
-<!DOCTYPE html>
-<html lang="hi">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#0d0f14">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Mock Test">
-<link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="icon-192.png">
-<title>Smart Mock Test</title>
-<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet">
-<style>
-:root{
-  --bg:#0d0f14;--s1:#13161f;--s2:#1a1e2b;--s3:#222736;
-  --border:#2c3148;--acc:#4f7fff;--acc2:#7c3aed;
-  --green:#10b981;--red:#ef4444;--gold:#f59e0b;
-  --text:#e2e6f0;--muted:#5a6178;
-  --safe-top:env(safe-area-inset-top,0px);
-  --safe-bot:env(safe-area-inset-bottom,0px);
+import { useState, useRef, useEffect } from "react";
+
+const COLORS = {
+  bg: "#0f172a", card: "#1e293b", accent: "#6366f1", accentLight: "#818cf8",
+  green: "#22c55e", red: "#ef4444", yellow: "#f59e0b", blue: "#3b82f6",
+  text: "#f1f5f9", muted: "#94a3b8", border: "#334155",
+};
+const OPTION_COLORS = ["#6366f1","#ec4899","#f59e0b","#22c55e"];
+const OPTION_LABELS = ["A","B","C","D"];
+
+const defaultQuestions = [
+  { id:1, topic:"Physics", text:"Newton's first law states an object stays at rest unless acted upon by:", options:["Gravity","An external force","Friction","Inertia"], correct:1, image:null },
+  { id:2, topic:"Chemistry", text:"What is the atomic number of Carbon?", options:["6","12","8","14"], correct:0, image:null },
+  { id:3, topic:"Math", text:"If f(x) = x² + 3x + 2, what are the roots of f(x) = 0?", options:["-1, -2","1, 2","-1, 2","1, -2"], correct:0, image:null },
+];
+
+async function parseQuestionFromImage(base64, mimeType) {
+  const response = await fetch("https://api.anthropic.com/v1/messages", {
+    method:"POST", headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({
+      model:"claude-sonnet-4-20250514", max_tokens:1000,
+      messages:[{ role:"user", content:[
+        { type:"image", source:{ type:"base64", media_type:mimeType, data:base64 }},
+        { type:"text", text:`Extract the exam question from this image. Return ONLY a JSON object:
+{"text":"question text","options":["A","B","C","D"],"correct":0,"topic":"subject"}
+"correct" is 0-based index of correct answer. Return ONLY JSON, no explanation.` }
+      ]}]
+    })
+  });
+  const data = await response.json();
+  const raw = data.content?.map(i=>i.text||"").join("") || "";
+  return JSON.parse(raw.replace(/```json|```/g,"").trim());
 }
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-html{height:100%;overflow:hidden;}
-body{font-family:'Sora',system-ui,sans-serif;background:var(--bg);color:var(--text);height:100%;display:flex;flex-direction:column;overflow:hidden;padding-top:var(--safe-top);padding-bottom:var(--safe-bot);}
-input,textarea,select,button{font-family:inherit;}
-::-webkit-scrollbar{display:none;}
-.topbar{flex-shrink:0;background:var(--s1);border-bottom:1px solid var(--border);padding:12px 16px;display:flex;align-items:center;gap:10px;position:relative;z-index:100;}
-.topbar-logo{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,var(--acc),var(--acc2));display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;}
-.topbar-title{font-weight:800;font-size:0.95rem;flex:1;background:linear-gradient(135deg,var(--acc),var(--acc2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
-.topbar-badge{background:var(--s3);border:1px solid var(--border);border-radius:12px;padding:3px 10px;font-size:0.72rem;color:var(--acc);font-weight:700;}
-.scroll-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;}
-.bottom-nav{flex-shrink:0;background:var(--s1);border-top:1px solid var(--border);display:flex;}
-.bnav-item{flex:1;display:flex;flex-direction:column;align-items:center;padding:10px 4px 8px;cursor:pointer;color:var(--muted);font-size:0.65rem;font-weight:700;border-top:2px solid transparent;transition:all .2s;gap:3px;}
-.bnav-item.active{color:var(--acc);border-top-color:var(--acc);}
-.bnav-icon{font-size:1.25rem;line-height:1;}
-.page{display:none;padding:16px;animation:fadeUp .25s ease;}
-.page.active{display:block;}
-@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-.card{background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:14px;}
-.card-head{font-size:0.88rem;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
-.fg{margin-bottom:12px;}
-.fg label{display:block;font-size:0.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;}
-.fg input,.fg textarea,.fg select{width:100%;padding:11px 13px;background:var(--s2);border:1px solid var(--border);border-radius:9px;color:var(--text);font-size:0.9rem;transition:border-color .2s;}
-.fg input:focus,.fg textarea:focus,.fg select:focus{outline:none;border-color:var(--acc);}
-.fg textarea{resize:none;min-height:70px;}
-.opts-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:12px;}
-.opt-row{display:flex;align-items:center;gap:7px;}
-.opt-badge{width:26px;height:26px;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:0.72rem;font-weight:800;color:white;}
-.correct-row{display:flex;align-items:center;gap:10px;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.25);border-radius:9px;padding:10px 13px;margin-bottom:12px;flex-wrap:wrap;}
-.correct-row label{font-size:0.72rem;font-weight:700;color:var(--green);text-transform:uppercase;}
-.correct-row select{width:auto;padding:7px 12px;background:var(--s2);border:1px solid rgba(16,185,129,.4);border-radius:8px;color:var(--green);font-weight:700;font-size:0.88rem;}
-.explain-input{flex:1;min-width:130px;padding:8px 12px;background:var(--s2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.82rem;}
-.explain-input:focus{outline:none;border-color:var(--acc);}
-.btn{display:inline-flex;align-items:center;gap:6px;padding:11px 18px;border:none;border-radius:10px;font-size:0.85rem;font-weight:700;cursor:pointer;transition:all .18s;width:100%;justify-content:center;}
-.btn+.btn{margin-top:8px;}
-.btn:active{transform:scale(.97);}
-.btn-primary{background:linear-gradient(135deg,var(--acc),var(--acc2));color:white;}
-.btn-green{background:var(--green);color:white;}
-.btn-red{background:var(--red);color:white;}
-.btn-gold{background:var(--gold);color:#111;}
-.btn-ghost{background:var(--s3);border:1px solid var(--border);color:var(--text);}
-.btn-sm{padding:8px 14px;font-size:0.78rem;width:auto;}
-.btn-inline{width:auto;}
-.btn-row{display:flex;gap:8px;flex-wrap:wrap;}
-.btn-row .btn{flex:1;}
-.upload-area{border:2px dashed var(--border);border-radius:12px;padding:24px 16px;text-align:center;cursor:pointer;transition:all .22s;background:rgba(79,127,255,.03);}
-.upload-area:active{border-color:var(--acc);background:rgba(79,127,255,.08);}
-.upload-area h3{font-size:0.9rem;font-weight:700;margin-bottom:4px;}
-.upload-area p{font-size:0.75rem;color:var(--muted);}
-.file-chip{display:flex;align-items:center;gap:10px;background:var(--s2);border:1px solid var(--border);border-radius:9px;padding:10px 13px;margin-top:10px;}
-.file-chip .fname{flex:1;font-size:0.82rem;font-weight:600;}
-.file-chip .fremove{color:var(--red);cursor:pointer;font-size:1rem;padding:2px 6px;}
-.img-preview{margin-top:10px;border-radius:10px;overflow:hidden;border:1px solid var(--border);background:#000;display:flex;align-items:center;justify-content:center;max-height:200px;}
-.img-preview img{max-width:100%;max-height:200px;object-fit:contain;}
-.status-box{display:flex;align-items:center;gap:9px;background:var(--s2);border:1px solid var(--border);border-radius:9px;padding:10px 13px;margin-top:10px;font-size:0.82rem;}
-.s-dot{width:8px;height:8px;border-radius:50%;background:var(--acc);animation:pulse 1s infinite;flex-shrink:0;}
-@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(1.4)}}
-.status-box.ok{border-color:rgba(16,185,129,.35);}
-.status-box.ok .s-dot{background:var(--green);animation:none;}
-.status-box.err{border-color:rgba(239,68,68,.35);}
-.status-box.err .s-dot{background:var(--red);animation:none;}
-.search-bar{width:100%;padding:11px 14px;background:var(--s2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:0.88rem;margin-bottom:12px;}
-.search-bar:focus{outline:none;border-color:var(--acc);}
-.q-item{background:var(--s2);border:1px solid var(--border);border-radius:11px;padding:13px;margin-bottom:10px;display:flex;gap:11px;align-items:flex-start;}
-.q-num{width:30px;height:30px;flex-shrink:0;border-radius:7px;background:linear-gradient(135deg,var(--acc),var(--acc2));display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.78rem;color:white;}
-.q-body{flex:1;min-width:0;}
-.q-text{font-size:0.85rem;font-weight:600;margin-bottom:7px;line-height:1.5;}
-.q-img-thumb{max-width:80px;max-height:55px;border-radius:6px;border:1px solid var(--border);margin-bottom:6px;cursor:pointer;display:block;}
-.chips{display:flex;flex-wrap:wrap;gap:4px;}
-.chip{padding:2px 8px;border-radius:10px;font-size:0.68rem;font-weight:600;background:var(--s3);border:1px solid var(--border);color:var(--muted);}
-.chip.c{background:rgba(16,185,129,.15);border-color:rgba(16,185,129,.35);color:var(--green);}
-.chip.s{background:rgba(79,127,255,.12);border-color:rgba(79,127,255,.3);color:var(--acc);}
-.q-del{color:var(--red);cursor:pointer;font-size:1rem;padding:4px;flex-shrink:0;}
-.stat-row{display:flex;gap:10px;margin-bottom:14px;}
-.stat-box{flex:1;background:var(--s2);border:1px solid var(--border);border-radius:10px;padding:12px 10px;text-align:center;}
-.stat-val{font-size:1.4rem;font-weight:800;background:linear-gradient(135deg,var(--acc),var(--acc2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
-.stat-lbl{font-size:0.65rem;color:var(--muted);font-weight:600;margin-top:2px;}
-#examView{display:none;}
-.exam-bar{background:var(--s1);border-bottom:1px solid var(--border);padding:10px 16px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:80;}
-.timer-txt{font-size:1.3rem;font-weight:800;letter-spacing:2px;font-variant-numeric:tabular-nums;background:linear-gradient(135deg,var(--acc),var(--acc2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;flex-shrink:0;}
-.timer-txt.warn{background:linear-gradient(135deg,var(--gold),#f97316);-webkit-background-clip:text;}
-.timer-txt.danger{background:linear-gradient(135deg,var(--red),#ec4899);-webkit-background-clip:text;animation:bl .5s infinite;}
-@keyframes bl{0%,100%{opacity:1}50%{opacity:.4}}
-.prog-wrap{flex:1;}
-.prog-bar{height:5px;background:var(--border);border-radius:3px;overflow:hidden;}
-.prog-fill{height:100%;background:linear-gradient(90deg,var(--acc),var(--acc2));border-radius:3px;transition:width .3s;}
-.prog-txt{font-size:0.68rem;color:var(--muted);margin-top:3px;}
-.qdots{display:flex;flex-wrap:wrap;gap:5px;padding:12px 16px 4px;background:var(--s1);border-bottom:1px solid var(--border);}
-.qdot{width:28px;height:28px;border-radius:7px;background:var(--s2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:0.68rem;font-weight:700;cursor:pointer;color:var(--muted);}
-.qdot.a{background:rgba(79,127,255,.2);border-color:var(--acc);color:var(--acc);}
-.exam-qcard{background:var(--s1);border:1px solid var(--border);border-radius:14px;margin:12px 16px;overflow:hidden;}
-.eq-head{display:flex;align-items:center;gap:7px;padding:10px 14px 0;}
-.eq-num{background:linear-gradient(135deg,var(--acc),var(--acc2));color:white;border-radius:7px;padding:3px 10px;font-weight:800;font-size:0.78rem;}
-.eq-subj{font-size:0.72rem;color:var(--gold);font-weight:700;}
-.eq-textbox{min-height:80px;display:flex;align-items:center;justify-content:center;padding:12px 16px;background:rgba(79,127,255,.05);border-top:1px solid var(--border);border-bottom:1px solid var(--border);margin:10px 0 0;text-align:center;}
-.eq-text{font-size:0.95rem;font-weight:600;line-height:1.6;text-align:center;width:100%;}
-.eq-img{max-width:100%;max-height:160px;object-fit:contain;border-radius:8px;border:1px solid var(--border);margin:10px 16px 0;display:block;cursor:pointer;width:calc(100% - 32px);}
-.eq-opts{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px 14px 14px;}
-.eq-opt{display:flex;align-items:center;gap:8px;padding:11px 12px;background:var(--s2);border:2px solid var(--border);border-radius:10px;cursor:pointer;transition:all .17s;font-size:0.86rem;-webkit-user-select:none;min-height:48px;}
-.eq-opt:active{transform:scale(.97);}
-.eq-opt.sel{border-color:var(--acc);background:rgba(79,127,255,.14);}
-.okey{width:26px;height:26px;border-radius:6px;flex-shrink:0;background:var(--s3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.78rem;transition:all .17s;}
-.eq-opt.sel .okey{background:var(--acc);border-color:var(--acc);color:white;}
-.eq-opt-text{flex:1;line-height:1.3;word-break:break-word;}
-.exam-submit-btn{margin:16px;display:block;width:calc(100% - 32px);}
-#resultView{display:none;}
-.result-hero{background:var(--s1);border:1px solid var(--border);border-radius:16px;padding:24px 16px;text-align:center;margin-bottom:14px;position:relative;overflow:hidden;}
-.result-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(79,127,255,.12),transparent 70%);pointer-events:none;}
-.score-donut{width:130px;height:130px;border-radius:50%;background:conic-gradient(var(--acc) 0%,var(--acc2) var(--p,0%),var(--border) var(--p,0%));display:flex;align-items:center;justify-content:center;margin:0 auto 16px;box-shadow:0 0 30px rgba(79,127,255,.2);}
-.score-inner{width:100px;height:100px;border-radius:50%;background:var(--s1);display:flex;flex-direction:column;align-items:center;justify-content:center;}
-.score-pct{font-size:1.6rem;font-weight:800;background:linear-gradient(135deg,var(--acc),var(--acc2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
-.r-grade{font-size:1.15rem;font-weight:800;margin-bottom:4px;}
-.r-msg{color:var(--muted);font-size:0.82rem;margin-bottom:20px;}
-.r-stats{display:flex;gap:8px;justify-content:center;}
-.rs{background:var(--s2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;text-align:center;flex:1;}
-.rs-v{font-size:1.2rem;font-weight:800;}
-.rs-l{font-size:0.62rem;color:var(--muted);font-weight:600;margin-top:2px;}
-.review-item{background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px;}
-.review-item.rc{border-left:4px solid var(--green);}
-.review-item.rw{border-left:4px solid var(--red);}
-.review-item.rs-i{border-left:4px solid var(--gold);}
-.rv-st{font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:7px;}
-.empty{text-align:center;padding:48px 20px;color:var(--muted);}
-.empty-icon{font-size:3rem;margin-bottom:12px;opacity:.4;}
-.empty h3{font-size:0.95rem;font-weight:700;}
-#toast{position:fixed;bottom:calc(70px + var(--safe-bot));left:50%;transform:translateX(-50%);background:var(--s2);border:1px solid var(--border);border-radius:10px;padding:10px 18px;font-size:0.82rem;font-weight:600;z-index:9999;display:none;box-shadow:0 8px 24px rgba(0,0,0,.4);animation:tin .3s ease;white-space:nowrap;}
-@keyframes tin{from{opacity:0;transform:translateX(-50%) translateY(12px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
-.modal{position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:9000;display:none;align-items:center;justify-content:center;}
-.modal.open{display:flex;}
-.modal img{max-width:95vw;max-height:90vh;border-radius:8px;}
-.modal-x{position:absolute;top:16px;right:18px;font-size:1.6rem;color:white;cursor:pointer;}
-#installBanner{display:none;background:linear-gradient(135deg,rgba(79,127,255,.2),rgba(124,58,237,.2));border:1px solid rgba(79,127,255,.35);border-radius:12px;padding:12px 14px;margin:0 16px 14px;font-size:0.82rem;}
-#installBanner.show{display:flex;align-items:center;gap:10px;}
-</style>
-</head>
-<body>
 
-<div class="topbar">
-  <div class="topbar-logo">🧠</div>
-  <span class="topbar-title">Smart Mock Test</span>
-  <span class="topbar-badge" id="topBadge">0 Q</span>
-</div>
+function shuffle(arr) {
+  const a=[...arr];
+  for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}
+  return a;
+}
 
-<div id="installBanner">
-  <span style="flex:1">📲 <strong>Home Screen par add karo</strong> — App jaisi feel!</span>
-  <button class="btn btn-sm btn-primary btn-inline" onclick="installPWA()">Install</button>
-</div>
+function Badge({label,color}){
+  return <span style={{background:color+"22",color,border:`1px solid ${color}44`,borderRadius:6,padding:"2px 10px",fontSize:12,fontWeight:700}}>{label}</span>;
+}
 
-<div class="scroll-body" id="scrollBody">
+function OptionButton({label,text,selected,correct,showResult,onClick,idx}){
+  const color=OPTION_COLORS[idx];
+  let bg=color+"18",border=color+"55",textColor=COLORS.text;
+  if(showResult){
+    if(idx===correct){bg="#22c55e22";border="#22c55e";textColor="#22c55e";}
+    else if(selected&&idx!==correct){bg="#ef444422";border="#ef4444";textColor="#ef4444";}
+  } else if(selected){bg=color+"33";border=color;}
+  return(
+    <button onClick={onClick} disabled={showResult} style={{display:"flex",alignItems:"center",gap:12,width:"100%",background:bg,border:`2px solid ${border}`,borderRadius:12,padding:"12px 16px",cursor:showResult?"default":"pointer",transition:"all 0.2s",marginBottom:8,textAlign:"left"}}>
+      <span style={{width:32,height:32,borderRadius:"50%",background:color,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,fontSize:14,color:"#fff",flexShrink:0}}>{label}</span>
+      <span style={{color:textColor,fontSize:14,flex:1}}>{text}</span>
+      {showResult&&idx===correct&&<span>✅</span>}
+      {showResult&&selected&&idx!==correct&&<span>❌</span>}
+    </button>
+  );
+}
 
-  <div class="page active" id="page-add">
-    <div style="height:14px;"></div>
-
-    <div class="card" style="border-color:rgba(79,127,255,.5);background:linear-gradient(135deg,rgba(79,127,255,.08),rgba(124,58,237,.08));">
-      <div class="card-head" style="color:var(--acc);">⚡ Bulk Paste — Ek saath 50 Questions</div>
-      <div class="fg">
-        <label>Subject</label>
-        <input type="text" id="bulkSubject" placeholder="e.g. Math, GK, Reasoning..." />
+function QuestionCard({q,idx,total,onAnswer,testMode}){
+  const [selected,setSelected]=useState(null);
+  useEffect(()=>{setSelected(null);},[q.id]);
+  const handle=(i)=>{
+    if(selected!==null)return;
+    setSelected(i);
+    onAnswer(i===q.correct,i);
+  };
+  return(
+    <div style={{background:COLORS.card,borderRadius:18,padding:24,border:`1px solid ${COLORS.border}`}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+        <Badge label={q.topic} color={COLORS.accent}/>
+        <span style={{color:COLORS.muted,fontSize:13}}>Q {idx+1} / {total}</span>
       </div>
-      <div class="fg">
-        <label>Questions paste karein *</label>
-        <textarea id="bulkText" style="min-height:130px;font-size:0.82rem;line-height:1.6;" placeholder="Koi bhi format mein paste karo:&#10;&#10;1. Capital of India?&#10;A) Mumbai  B) Delhi  C) Chennai  D) Kolkata&#10;Ans: B&#10;&#10;2. 2+2=?&#10;(a)3  (b)4  (c)5  (d)6&#10;Answer: b"></textarea>
-      </div>
-      <div id="bulkStatus" style="display:none;"></div>
-      <div id="bulkPreview" style="display:none;margin-top:12px;"></div>
-      <button class="btn btn-primary" onclick="bulkExtract()" id="bulkBtn">✨ AI se Extract Karein</button>
+      {q.image&&<img src={q.image} alt="q" style={{width:"100%",maxHeight:200,objectFit:"contain",borderRadius:10,marginBottom:14,background:"#0f172a"}}/>}
+      <p style={{color:COLORS.text,fontSize:16,lineHeight:1.6,marginBottom:20}}>{q.text}</p>
+      {q.options.map((opt,i)=>(
+        <OptionButton key={i} idx={i} label={OPTION_LABELS[i]} text={opt} selected={selected===i} correct={q.correct} showResult={!testMode&&selected!==null} onClick={()=>handle(i)}/>
+      ))}
     </div>
+  );
+}
 
-    <div class="card">
-      <div class="card-head">🖼️ Image se Question Add Karein</div>
-      <div class="upload-area" onclick="pickFile()">
-        <input type="file" id="fileInput" accept="image/*" style="display:none;" onchange="onFileChange(event)" capture="environment" />
-        <div style="font-size:2rem;margin-bottom:8px;">📎</div>
-        <h3>Photo ya Image select karein</h3>
-        <p>Camera se bhi le sakte hain • JPG, PNG supported</p>
-      </div>
-      <div id="fileChip" style="display:none;"></div>
-      <div class="img-preview" id="imgBig" style="display:none;"></div>
-      <div id="imgStatusBox" style="display:none;"></div>
-      <div id="imgForm" style="display:none;margin-top:14px;"></div>
-    </div>
-
-    <div class="card">
-      <div class="card-head">✏️ Manually Likhein</div>
-      <div class="fg"><label>Subject</label><input type="text" id="ms" placeholder="Math, Science..." /></div>
-      <div class="fg"><label>Question *</label><textarea id="mq" placeholder="Question likhein..."></textarea></div>
-      <div class="fg">
-        <label>Question Image (optional)</label>
-        <div class="upload-area" style="padding:14px;" onclick="pickQImg()">
-          <input type="file" id="qImgInput" accept="image/*" style="display:none;" onchange="onQImgChange(event)" />
-          <p style="font-size:0.8rem;">📷 Diagram / figure attach karein</p>
+function AnswerKeyModal({questions,onClose}){
+  return(
+    <div style={{position:"fixed",inset:0,background:"#000a",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center"}} onClick={onClose}>
+      <div onClick={e=>e.stopPropagation()} style={{background:COLORS.card,borderRadius:20,padding:28,maxWidth:540,width:"90%",maxHeight:"80vh",overflowY:"auto",border:`1px solid ${COLORS.border}`}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
+          <h2 style={{color:COLORS.text,margin:0,fontSize:20}}>📋 Answer Key</h2>
+          <button onClick={onClose} style={{background:"none",border:"none",color:COLORS.muted,fontSize:22,cursor:"pointer"}}>✕</button>
         </div>
-        <div id="qImgPrev" style="display:none;margin-top:8px;"></div>
-      </div>
-      <div class="opts-grid">
-        <div class="opt-row"><div class="opt-badge" style="background:linear-gradient(135deg,#4f7fff,#7c3aed)">A</div><input type="text" id="ma" placeholder="Option A" style="width:100%;padding:9px 11px;background:var(--s2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.88rem;"/></div>
-        <div class="opt-row"><div class="opt-badge" style="background:linear-gradient(135deg,#10b981,#059669)">B</div><input type="text" id="mb" placeholder="Option B" style="width:100%;padding:9px 11px;background:var(--s2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.88rem;"/></div>
-        <div class="opt-row"><div class="opt-badge" style="background:linear-gradient(135deg,#f59e0b,#d97706)">C</div><input type="text" id="mc" placeholder="Option C" style="width:100%;padding:9px 11px;background:var(--s2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.88rem;"/></div>
-        <div class="opt-row"><div class="opt-badge" style="background:linear-gradient(135deg,#ef4444,#dc2626)">D</div><input type="text" id="md" placeholder="Option D" style="width:100%;padding:9px 11px;background:var(--s2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.88rem;"/></div>
-      </div>
-      <div class="correct-row">
-        <label>✅ Correct:</label>
-        <select id="mcorr"><option>A</option><option>B</option><option>C</option><option>D</option></select>
-        <input class="explain-input" id="mexplain" placeholder="Explanation (optional)..." />
-      </div>
-      <div class="btn-row">
-        <button class="btn btn-primary" onclick="addManual()">➕ Add</button>
-        <button class="btn btn-ghost" onclick="clearManual()">🗑️</button>
+        <div style={{display:"flex",flexDirection:"column",gap:10}}>
+          {questions.map((q,i)=>(
+            <div key={q.id} style={{display:"flex",gap:14,alignItems:"flex-start",background:COLORS.bg,borderRadius:10,padding:"12px 14px"}}>
+              <span style={{color:COLORS.muted,minWidth:28,fontWeight:700}}>Q{i+1}</span>
+              <div style={{flex:1}}>
+                <p style={{color:COLORS.text,fontSize:13,margin:"0 0 6px"}}>{q.text.slice(0,80)}{q.text.length>80?"...":""}</p>
+                <span style={{background:COLORS.green+"22",color:COLORS.green,border:`1px solid ${COLORS.green}44`,borderRadius:6,padding:"2px 10px",fontSize:12,fontWeight:700}}>
+                  {OPTION_LABELS[q.correct]}: {q.options[q.correct]}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+        <button onClick={()=>window.print()} style={{marginTop:20,width:"100%",padding:"12px",background:COLORS.accent,color:"#fff",border:"none",borderRadius:12,cursor:"pointer",fontSize:15,fontWeight:700}}>
+          🖨️ Print / Save as PDF
+        </button>
       </div>
     </div>
-    <div style="height:20px;"></div>
-  </div>
+  );
+}
 
-  <div class="page" id="page-bank">
-    <div style="height:14px;"></div>
-    <input type="text" class="search-bar" id="searchBar" placeholder="🔍 Search..." oninput="renderBank()" />
-    <div style="display:flex;gap:8px;margin-bottom:12px;">
-      <button class="btn btn-ghost btn-sm btn-inline" onclick="exportQ()">📤 Export</button>
-      <button class="btn btn-ghost btn-sm btn-inline" onclick="importQ()">📥 Import</button>
-      <button class="btn btn-red btn-sm btn-inline" style="margin-left:auto;" onclick="clearAll()">🗑️ Sab</button>
-    </div>
-    <div id="bankList"></div>
-    <div style="height:20px;"></div>
-  </div>
+function AddModal({onAdd,onClose}){
+  const [text,setText]=useState("");
+  const [options,setOptions]=useState(["","","",""]);
+  const [correct,setCorrect]=useState(0);
+  const [topic,setTopic]=useState("");
+  const [image,setImage]=useState(null);
+  const [loading,setLoading]=useState(false);
+  const [error,setError]=useState("");
+  const fileRef=useRef();
 
-  <div class="page" id="page-setup">
-    <div style="height:14px;"></div>
-    <div class="card">
-      <div class="stat-row" id="setupStats"></div>
-      <div class="fg"><label>Test Title</label><input type="text" id="tTitle" value="Mock Test" /></div>
-      <div class="fg"><label>Total Questions</label><input type="number" id="tNum" value="10" min="1" /></div>
-      <div class="fg"><label>Time (Minutes)</label><input type="number" id="tTime" value="30" min="1" /></div>
-      <div class="fg"><label>Subject Filter</label><select id="tSub"><option value="all">All Subjects</option></select></div>
-      <button class="btn btn-primary" style="margin-top:4px;" onclick="startExam()">🚀 Test Shuru Karein</button>
-    </div>
-    <div style="height:20px;"></div>
-  </div>
+  const handleImg=async(e)=>{
+    const file=e.target.files[0]; if(!file)return;
+    setLoading(true);setError("");
+    const reader=new FileReader();
+    reader.onload=async(ev)=>{
+      const dataUrl=ev.target.result;
+      const base64=dataUrl.split(",")[1];
+      try{
+        const parsed=await parseQuestionFromImage(base64,file.type);
+        setText(parsed.text||"");
+        setOptions(parsed.options?.length===4?parsed.options:["","",""]);
+        setCorrect(typeof parsed.correct==="number"?parsed.correct:0);
+        setTopic(parsed.topic||"");
+        setImage(dataUrl);
+      }catch{setError("Could not auto-parse. Fill manually.");setImage(dataUrl);}
+      setLoading(false);
+    };
+    reader.readAsDataURL(file);
+  };
 
-  <div id="examView">
-    <div class="exam-bar">
-      <div class="timer-txt" id="timerEl">00:00</div>
-      <div class="prog-wrap">
-        <div class="prog-bar"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
-        <div class="prog-txt" id="progTxt">0 / 0</div>
+  const submit=()=>{
+    if(!text||options.some(o=>!o)){setError("Fill all fields.");return;}
+    onAdd({id:Date.now(),text,options,correct,topic:topic||"General",image});
+    onClose();
+  };
+
+  return(
+    <div style={{position:"fixed",inset:0,background:"#000b",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center"}} onClick={onClose}>
+      <div onClick={e=>e.stopPropagation()} style={{background:COLORS.card,borderRadius:20,padding:28,maxWidth:520,width:"90%",maxHeight:"88vh",overflowY:"auto",border:`1px solid ${COLORS.border}`}}>
+        <div style={{display:"flex",justifyContent:"space-between",marginBottom:18}}>
+          <h2 style={{color:COLORS.text,margin:0}}>➕ Add Question</h2>
+          <button onClick={onClose} style={{background:"none",border:"none",color:COLORS.muted,fontSize:22,cursor:"pointer"}}>✕</button>
+        </div>
+        <div onClick={()=>fileRef.current.click()} style={{border:`2px dashed ${COLORS.accent}`,borderRadius:12,padding:18,textAlign:"center",cursor:"pointer",marginBottom:16,background:COLORS.accent+"11"}}>
+          {loading?<span style={{color:COLORS.accentLight}}>🤖 AI is reading image...</span>
+            :image?<img src={image} alt="" style={{maxHeight:100,borderRadius:8}}/>
+            :<span style={{color:COLORS.accentLight}}>📷 Upload photo — AI auto-fills question</span>}
+        </div>
+        <input ref={fileRef} type="file" accept="image/*" style={{display:"none"}} onChange={handleImg}/>
+        {error&&<p style={{color:COLORS.red,fontSize:13,marginBottom:10}}>{error}</p>}
+        <input value={topic} onChange={e=>setTopic(e.target.value)} placeholder="Topic (e.g. Physics)" style={{width:"100%",background:COLORS.bg,border:`1px solid ${COLORS.border}`,borderRadius:10,padding:"10px 14px",color:COLORS.text,fontSize:14,marginBottom:10,boxSizing:"border-box"}}/>
+        <textarea value={text} onChange={e=>setText(e.target.value)} placeholder="Question text..." rows={3} style={{width:"100%",background:COLORS.bg,border:`1px solid ${COLORS.border}`,borderRadius:10,padding:"10px 14px",color:COLORS.text,fontSize:14,marginBottom:10,resize:"vertical",boxSizing:"border-box"}}/>
+        {options.map((opt,i)=>(
+          <div key={i} style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+            <span style={{width:30,height:30,background:OPTION_COLORS[i],borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,fontSize:13,color:"#fff",flexShrink:0}}>{OPTION_LABELS[i]}</span>
+            <input value={opt} onChange={e=>{const o=[...options];o[i]=e.target.value;setOptions(o);}} placeholder={`Option ${OPTION_LABELS[i]}`} style={{flex:1,background:COLORS.bg,border:`1px solid ${correct===i?COLORS.green:COLORS.border}`,borderRadius:8,padding:"8px 12px",color:COLORS.text,fontSize:14}}/>
+            <button onClick={()=>setCorrect(i)} style={{background:correct===i?COLORS.green:"transparent",border:`1px solid ${correct===i?COLORS.green:COLORS.border}`,borderRadius:6,padding:"4px 8px",cursor:"pointer",fontSize:11,color:COLORS.text}}>✓</button>
+          </div>
+        ))}
+        <button onClick={submit} style={{marginTop:16,width:"100%",padding:"13px",background:COLORS.accent,color:"#fff",border:"none",borderRadius:12,cursor:"pointer",fontSize:15,fontWeight:700}}>Add Question</button>
       </div>
-      <button class="btn btn-red btn-sm btn-inline" onclick="submitExam(true)">Submit</button>
     </div>
-    <div class="qdots" id="qdots"></div>
-    <div id="examQs"></div>
-    <button class="btn btn-green exam-submit-btn" onclick="submitExam(true)">✅ Test Submit Karein</button>
-    <div style="height:20px;"></div>
-  </div>
+  );
+}
 
-  <div id="resultView">
-    <div style="padding:14px 16px 0;">
-      <div class="result-hero">
-        <div class="score-donut" id="scoreDonut">
-          <div class="score-inner">
-            <div class="score-pct" id="scorePct">0%</div>
-            <div style="font-size:0.6rem;color:var(--muted);font-weight:600;">SCORE</div>
+function ResultModal({score,total,onClose,onRetry}){
+  const pct=Math.round((score/total)*100);
+  const color=pct>=70?COLORS.green:pct>=40?COLORS.yellow:COLORS.red;
+  return(
+    <div style={{position:"fixed",inset:0,background:"#000b",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center"}}>
+      <div style={{background:COLORS.card,borderRadius:24,padding:40,maxWidth:360,width:"90%",textAlign:"center",border:`1px solid ${COLORS.border}`}}>
+        <div style={{fontSize:64,marginBottom:12}}>{pct>=70?"🏆":pct>=40?"📚":"💪"}</div>
+        <h2 style={{color:COLORS.text,margin:"0 0 8px"}}>Test Complete!</h2>
+        <div style={{fontSize:52,fontWeight:900,color,marginBottom:8}}>{pct}%</div>
+        <p style={{color:COLORS.muted,marginBottom:24}}>{score} correct out of {total}</p>
+        <div style={{display:"flex",gap:10}}>
+          <button onClick={onRetry} style={{flex:1,padding:"12px",background:COLORS.accent,color:"#fff",border:"none",borderRadius:12,cursor:"pointer",fontWeight:700}}>Retry</button>
+          <button onClick={onClose} style={{flex:1,padding:"12px",background:COLORS.bg,color:COLORS.text,border:`1px solid ${COLORS.border}`,borderRadius:12,cursor:"pointer",fontWeight:700}}>Done</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FilterSheet({questions,selected,onSelect,onClose}){
+  const topics=["All",...new Set(questions.map(q=>q.topic))];
+  return(
+    <div style={{position:"fixed",inset:0,background:"#000a",zIndex:999,display:"flex",alignItems:"flex-end",justifyContent:"center"}} onClick={onClose}>
+      <div onClick={e=>e.stopPropagation()} style={{background:COLORS.card,borderRadius:"20px 20px 0 0",padding:24,width:"100%",maxWidth:480,border:`1px solid ${COLORS.border}`}}>
+        <h3 style={{color:COLORS.text,margin:"0 0 16px"}}>📚 Filter by Topic</h3>
+        <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
+          {topics.map(t=>(
+            <button key={t} onClick={()=>{onSelect(t);onClose();}} style={{background:selected===t?COLORS.accent:COLORS.bg,color:selected===t?"#fff":COLORS.muted,border:`1px solid ${selected===t?COLORS.accent:COLORS.border}`,borderRadius:20,padding:"8px 18px",cursor:"pointer",fontSize:14,fontWeight:600}}>{t}</button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const STORAGE_KEY="examprep_v2";
+function loadQs(){try{const r=localStorage.getItem(STORAGE_KEY);return r?JSON.parse(r):null;}catch{return null;}}
+function saveQs(d){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(d));}catch{}}
+
+export default function ExamPrep(){
+  const [questions,setQuestions]=useState(()=>loadQs()||defaultQuestions);
+  const [mode,setMode]=useState("home");
+  const [testMode,setTestMode]=useState(false);
+  const [currentIdx,setCurrentIdx]=useState(0);
+  const [score,setScore]=useState(0);
+  const [activeQs,setActiveQs]=useState([]);
+  const [showKey,setShowKey]=useState(false);
+  const [showAdd,setShowAdd]=useState(false);
+  const [showFilter,setShowFilter]=useState(false);
+  const [topicFilter,setTopicFilter]=useState("All");
+  const [showResult,setShowResult]=useState(false);
+
+  useEffect(()=>{saveQs(questions);},[questions]);
+
+  const filteredQs=topicFilter==="All"?questions:questions.filter(q=>q.topic===topicFilter);
+
+  const startSession=(isTest)=>{
+    const qs=shuffle(filteredQs);
+    setActiveQs(qs);setCurrentIdx(0);setScore(0);
+    setTestMode(isTest);setMode(isTest?"test":"practice");setShowResult(false);
+  };
+
+  const handleAnswer=(isCorrect)=>{
+    if(isCorrect)setScore(s=>s+1);
+    setTimeout(()=>{
+      if(currentIdx+1<activeQs.length)setCurrentIdx(i=>i+1);
+      else setShowResult(true);
+    },testMode?300:1400);
+  };
+
+  return(
+    <div style={{minHeight:"100vh",background:COLORS.bg,fontFamily:"'Inter',system-ui,sans-serif",color:COLORS.text}}>
+      {/* Header */}
+      <div style={{background:COLORS.card,borderBottom:`1px solid ${COLORS.border}`,padding:"16px 20px",display:"flex",alignItems:"center",justifyContent:"space-between",position:"sticky",top:0,zIndex:50}}>
+        <div style={{display:"flex",alignItems:"center",gap:10}}>
+          {mode!=="home"&&<button onClick={()=>setMode("home")} style={{background:"none",border:"none",color:COLORS.muted,cursor:"pointer",fontSize:20,padding:"0 4px 0 0"}}>←</button>}
+          <span style={{fontSize:22}}>🎓</span>
+          <span style={{fontWeight:800,fontSize:18}}>ExamPrep</span>
+          {mode!=="home"&&<Badge label={testMode?"Test Mode":"Practice"} color={testMode?COLORS.yellow:COLORS.green}/>}
+        </div>
+        {mode==="home"&&(
+          <div style={{display:"flex",gap:8}}>
+            <button onClick={()=>setShowFilter(true)} style={{background:COLORS.bg,border:`1px solid ${COLORS.border}`,borderRadius:8,color:COLORS.muted,padding:"6px 12px",cursor:"pointer",fontSize:13}}>🔍 {topicFilter}</button>
+            <button onClick={()=>setShowKey(true)} style={{background:COLORS.bg,border:`1px solid ${COLORS.border}`,borderRadius:8,color:COLORS.muted,padding:"6px 12px",cursor:"pointer",fontSize:13}}>📋 Keys</button>
+          </div>
+        )}
+      </div>
+
+      {/* Home Screen */}
+      {mode==="home"&&(
+        <div style={{maxWidth:480,margin:"0 auto",padding:"20px 16px"}}>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,marginBottom:20}}>
+            {[{label:"Total Qs",val:questions.length,icon:"📝",color:COLORS.accent},{label:"Topics",val:new Set(questions.map(q=>q.topic)).size,icon:"📚",color:COLORS.blue},{label:"Filtered",val:filteredQs.length,icon:"🔍",color:COLORS.yellow}].map(s=>(
+              <div key={s.label} style={{background:COLORS.card,borderRadius:14,padding:"14px 12px",textAlign:"center",border:`1px solid ${COLORS.border}`}}>
+                <div style={{fontSize:22}}>{s.icon}</div>
+                <div style={{fontSize:24,fontWeight:800,color:s.color}}>{s.val}</div>
+                <div style={{fontSize:11,color:COLORS.muted}}>{s.label}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{display:"flex",flexDirection:"column",gap:12,marginBottom:24}}>
+            <button onClick={()=>startSession(false)} disabled={filteredQs.length===0} style={{background:COLORS.green+"18",border:`2px solid ${COLORS.green}44`,borderRadius:16,padding:"18px 20px",cursor:"pointer",textAlign:"left",opacity:filteredQs.length===0?0.5:1}}>
+              <div style={{color:COLORS.text,fontWeight:700,fontSize:16}}>📖 Practice Mode</div>
+              <div style={{color:COLORS.muted,fontSize:13,marginTop:2}}>Instant feedback after each answer</div>
+            </button>
+            <button onClick={()=>startSession(true)} disabled={filteredQs.length===0} style={{background:COLORS.yellow+"18",border:`2px solid ${COLORS.yellow}44`,borderRadius:16,padding:"18px 20px",cursor:"pointer",textAlign:"left",opacity:filteredQs.length===0?0.5:1}}>
+              <div style={{color:COLORS.text,fontWeight:700,fontSize:16}}>⏱️ Test Mode</div>
+              <div style={{color:COLORS.muted,fontSize:13,marginTop:2}}>No hints — score revealed at the end</div>
+            </button>
+          </div>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+            <h3 style={{color:COLORS.text,margin:0}}>Question Bank</h3>
+            <button onClick={()=>setShowAdd(true)} style={{background:COLORS.accent,color:"#fff",border:"none",borderRadius:20,padding:"6px 16px",cursor:"pointer",fontWeight:700,fontSize:13}}>+ Add</button>
+          </div>
+          <div style={{display:"flex",flexDirection:"column",gap:8}}>
+            {filteredQs.map((q)=>(
+              <div key={q.id} style={{background:COLORS.card,borderRadius:12,padding:"12px 16px",border:`1px solid ${COLORS.border}`,display:"flex",gap:12,alignItems:"flex-start"}}>
+                {q.image&&<img src={q.image} alt="" style={{width:48,height:48,objectFit:"cover",borderRadius:8,flexShrink:0}}/>}
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{marginBottom:4}}><Badge label={q.topic} color={COLORS.accentLight}/></div>
+                  <p style={{color:COLORS.muted,fontSize:13,margin:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{q.text}</p>
+                </div>
+                <button onClick={()=>setQuestions(prev=>prev.filter(x=>x.id!==q.id))} style={{background:"none",border:"none",color:COLORS.red+"88",cursor:"pointer",fontSize:16,padding:4}}>🗑</button>
+              </div>
+            ))}
+            {filteredQs.length===0&&(
+              <div style={{textAlign:"center",padding:40,color:COLORS.muted}}>
+                <div style={{fontSize:40,marginBottom:8}}>📭</div>
+                <p>No questions yet. Add some!</p>
+              </div>
+            )}
           </div>
         </div>
-        <div class="r-grade" id="rGrade"></div>
-        <div class="r-msg" id="rMsg"></div>
-        <div class="r-stats">
-          <div class="rs"><div class="rs-v" style="color:var(--green)" id="rsC">0</div><div class="rs-l">✅ Sahi</div></div>
-          <div class="rs"><div class="rs-v" style="color:var(--red)" id="rsW">0</div><div class="rs-l">❌ Galat</div></div>
-          <div class="rs"><div class="rs-v" style="color:var(--gold)" id="rsS">0</div><div class="rs-l">⬜ Skip</div></div>
-          <div class="rs"><div class="rs-v" style="color:var(--acc)" id="rsT">0</div><div class="rs-l">📋 Total</div></div>
+      )}
+
+      {/* Practice / Test */}
+      {(mode==="practice"||mode==="test")&&!showResult&&activeQs[currentIdx]&&(
+        <div style={{maxWidth:480,margin:"0 auto",padding:"20px 16px"}}>
+          <div style={{marginBottom:16}}>
+            <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
+              <span style={{color:COLORS.muted,fontSize:13}}>{currentIdx+1} of {activeQs.length}</span>
+              <span style={{color:COLORS.muted,fontSize:13}}>Score: {score}</span>
+            </div>
+            <div style={{height:4,background:COLORS.border,borderRadius:4}}>
+              <div style={{height:"100%",background:COLORS.accent,borderRadius:4,width:`${(currentIdx/activeQs.length)*100}%`,transition:"width 0.3s"}}/>
+            </div>
+          </div>
+          <QuestionCard q={activeQs[currentIdx]} idx={currentIdx} total={activeQs.length} onAnswer={handleAnswer} testMode={testMode}/>
         </div>
-      </div>
-      <div class="btn-row" style="margin-bottom:12px;">
-        <button class="btn btn-ghost" onclick="toggleReview()">📖 Review</button>
-        <button class="btn btn-gold" onclick="retake()">🔄 Dobara</button>
-      </div>
-      <button class="btn btn-primary" onclick="backToSetup()" style="margin-bottom:14px;">⚙️ Naya Test</button>
-      <div id="reviewArea" style="display:none;"></div>
+      )}
+
+      {/* Modals */}
+      {showResult&&<ResultModal score={score} total={activeQs.length} onClose={()=>{setMode("home");setShowResult(false);}} onRetry={()=>startSession(testMode)}/>}
+      {showKey&&<AnswerKeyModal questions={filteredQs} onClose={()=>setShowKey(false)}/>}
+      {showAdd&&<AddModal onAdd={q=>setQuestions(prev=>[...prev,q])} onClose={()=>setShowAdd(false)}/>}
+      {showFilter&&<FilterSheet questions={questions} selected={topicFilter} onSelect={setTopicFilter} onClose={()=>setShowFilter(false)}/>}
     </div>
-    <div style="height:20px;"></div>
-  </div>
-
-</div>
-
-<div class="bottom-nav" id="bottomNav">
-  <div class="bnav-item active" id="bnav-add" onclick="goPage('add')"><span class="bnav-icon">➕</span>Add</div>
-  <div class="bnav-item" id="bnav-bank" onclick="goPage('bank')"><span class="bnav-icon">📚</span>Bank</div>
-  <div class="bnav-item" id="bnav-setup" onclick="goPage('setup')"><span class="bnav-icon">🎯</span>Test</div>
-</div>
-
-<div class="modal" id="modal" onclick="closeModal()">
-  <span class="modal-x">✕</span>
-  <img id="modalImg" src="" />
-</div>
-<div id="toast"></div>
-
-<script>
-// ======= GEMINI API KEY =======
-const GEMINI_API_KEY = 'AIzaSyCATYwqsfqt-kd54SF7jqSXbxEl53XcVMs';
-const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' + GEMINI_API_KEY;
-// ==============================
-
-let questions = [];
-let testQ = [], answers = {}, timerInt = null, timeLeft = 0;
-let pickedImgData = null, manualQImg = null, deferredInstall = null;
-
-try { questions = JSON.parse(localStorage.getItem('smtpwa') || '[]'); } catch(e){}
-
-window.addEventListener('beforeinstallprompt', e => {
-  e.preventDefault(); deferredInstall = e;
-  document.getElementById('installBanner').classList.add('show');
-});
-function installPWA() {
-  if (!deferredInstall) return;
-  deferredInstall.prompt();
-  deferredInstall.userChoice.then(() => { deferredInstall = null; document.getElementById('installBanner').classList.remove('show'); });
+  );
 }
-window.addEventListener('appinstalled', () => document.getElementById('installBanner').classList.remove('show'));
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});
-
-// ======= BULK EXTRACT using Gemini =======
-async function bulkExtract() {
-  const text = document.getElementById('bulkText').value.trim();
-  if (!text) { toast('Pehle questions paste karo!', 'error'); return; }
-
-  const subject = document.getElementById('bulkSubject').value.trim();
-  const btn = document.getElementById('bulkBtn');
-  const statusEl = document.getElementById('bulkStatus');
-
-  btn.disabled = true;
-  btn.textContent = '⏳ AI extract kar raha hai...';
-  statusEl.style.display = 'flex';
-  statusEl.className = 'status-box';
-  statusEl.innerHTML = '<span class="s-dot"></span><span>AI questions dhundh raha hai...</span>';
-
-  const prompt = `Extract ALL multiple choice questions from this text.
-Return ONLY a valid JSON array, no markdown, no explanation, no extra text.
-Format exactly like this:
-[{"q":"question text","A":"option a","B":"option b","C":"option c","D":"option d","ans":"A"}]
-
-Rules:
-- ans must be A, B, C, or D (uppercase only)
-- If answer uses (a)(b)(c)(d) or 1234, convert to A B C D
-- Extract every single question, do not skip any
-- Keep question text clean and complete
-
-Text to extract from:
-${text}`;
-
-  try {
-    const resp = await fetch(GEMINI_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.1, maxOutputTokens: 8000 }
-      })
-    });
-
-    const data = await resp.json();
-    if (data.error) throw new Error(data.error.message);
-
-    const raw = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    const cleaned = raw.replace(/```json|```/g, '').trim();
-
-    // Find JSON array in response
-    const match = cleaned.match(/\[[\s\S]*\]/);
-    if (!match) throw new Error('AI ne valid JSON nahi diya. Dobara try karo.');
-
-    const parsed = JSON.parse(match[0]);
-    if (!Array.isArray(parsed) || !parsed.length) throw new Error('Koi question nahi mila!');
-
-    statusEl.className = 'status-box ok';
-    statusEl.innerHTML = `<span class="s-dot"></span><span>✅ ${parsed.length} questions mile! Check karo aur save karo.</span>`;
-    showBulkPreview(parsed, subject);
-
-  } catch(err) {
-    statusEl.className = 'status-box err';
-    statusEl.innerHTML = `<span class="s-dot"></span><span>❌ Error: ${err.message}</span>`;
-  } finally {
-    btn.disabled = false;
-    btn.textContent = '✨ AI se Extract Karein';
-  }
-}
-
-function showBulkPreview(list, subject) {
-  const area = document.getElementById('bulkPreview');
-  area.style.display = 'block';
-  area.innerHTML = `
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
-      <span style="font-weight:700;font-size:0.88rem;color:var(--acc);">📋 ${list.length} Questions — Preview</span>
-      <div style="display:flex;gap:8px;">
-        <button class="btn btn-green btn-sm btn-inline" onclick="saveAllBulk()">💾 Sab Save (${list.length})</button>
-        <button class="btn btn-ghost btn-sm btn-inline" onclick="document.getElementById('bulkPreview').style.display='none'">✕</button>
-      </div>
-    </div>
-    ${list.map((q,i) => `
-      <div style="background:var(--s2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:8px;">
-        <div style="font-weight:700;font-size:0.78rem;color:var(--acc);margin-bottom:6px;">Q.${i+1}</div>
-        <div style="font-size:0.85rem;font-weight:600;margin-bottom:8px;">${q.q}</div>
-        <div style="display:flex;flex-wrap:wrap;gap:5px;">
-          ${['A','B','C','D'].map(opt=>`
-            <span style="padding:3px 10px;border-radius:7px;font-size:0.75rem;font-weight:600;
-              background:${q.ans===opt?'rgba(16,185,129,.2)':'var(--s3)'};
-              border:1px solid ${q.ans===opt?'var(--green)':'var(--border)'};
-              color:${q.ans===opt?'var(--green)':'var(--muted)'};">
-              ${opt}: ${q[opt]||'-'}${q.ans===opt?' ✓':''}
-            </span>`).join('')}
-        </div>
-      </div>`).join('')}`;
-  window._bulkParsed = list;
-  window._bulkSubject = subject;
-}
-
-function saveAllBulk() {
-  const list = window._bulkParsed;
-  const subject = window._bulkSubject || '';
-  if (!list || !list.length) return;
-  let count = 0;
-  list.forEach((q, i) => {
-    if (!q.q || !q.A || !q.B || !q.C || !q.D) return;
-    questions.push({ id: Date.now()+i, qText: q.q, options: {A:q.A,B:q.B,C:q.C,D:q.D}, correct: q.ans||'A', subject, explanation:'', image:null });
-    count++;
-  });
-  save();
-  toast(`✅ ${count} questions save ho gaye!`, 'success');
-  document.getElementById('bulkText').value = '';
-  document.getElementById('bulkPreview').style.display = 'none';
-  document.getElementById('bulkStatus').style.display = 'none';
-  document.getElementById('bulkSubject').value = '';
-  window._bulkParsed = null;
-}
-
-function save() {
-  localStorage.setItem('smtpwa', JSON.stringify(questions));
-  document.getElementById('topBadge').textContent = questions.length + ' Q';
-  updateSubjectSel(); updateSetupStats();
-}
-
-function toast(msg, type='info') {
-  const el = document.getElementById('toast');
-  el.textContent = msg; el.style.display = 'block';
-  el.style.borderColor = type==='success'?'rgba(16,185,129,.4)':type==='error'?'rgba(239,68,68,.4)':'var(--border)';
-  setTimeout(() => el.style.display='none', 2500);
-}
-
-function goPage(p) {
-  document.querySelectorAll('.page').forEach(el=>el.classList.remove('active'));
-  document.querySelectorAll('.bnav-item').forEach(el=>el.classList.remove('active'));
-  document.getElementById('page-'+p).classList.add('active');
-  document.getElementById('bnav-'+p).classList.add('active');
-  document.getElementById('examView').style.display='none';
-  document.getElementById('resultView').style.display='none';
-  document.getElementById('bottomNav').style.display='flex';
-  document.getElementById('scrollBody').scrollTop=0;
-  if(p==='bank') renderBank();
-}
-
-function pickFile(){document.getElementById('fileInput').click();}
-function onFileChange(e){
-  const f=e.target.files[0];if(!f)return;
-  const r=new FileReader();
-  r.onload=ev=>{pickedImgData=ev.target.result;showPickedImg(ev.target.result,f.name);};
-  r.readAsDataURL(f);
-}
-function showPickedImg(dataUrl,name){
-  const chip=document.getElementById('fileChip');
-  chip.style.display='flex';chip.className='file-chip';
-  chip.innerHTML=`<span style="font-size:1.2rem">🖼️</span><span class="fname">${name||'Image loaded'}</span><span class="fremove" onclick="removeImg()">✕</span>`;
-  const big=document.getElementById('imgBig');
-  big.style.display='flex';big.innerHTML=`<img src="${dataUrl}" style="max-width:100%;max-height:200px;object-fit:contain;"/>`;
-  showImgForm();
-}
-function removeImg(){
-  pickedImgData=null;
-  document.getElementById('fileChip').style.display='none';
-  document.getElementById('imgBig').style.display='none';
-  document.getElementById('imgBig').innerHTML='';
-  document.getElementById('imgStatusBox').style.display='none';
-  document.getElementById('imgForm').style.display='none';
-  document.getElementById('fileInput').value='';
-}
-function showImgForm(){
-  const status=document.getElementById('imgStatusBox');
-  status.style.display='flex';status.className='status-box ok';
-  status.innerHTML=`<span class="s-dot"></span><span>Image load ho gayi! Neeche form bharo</span>`;
-  const form=document.getElementById('imgForm');
-  form.style.display='block';
-  form.innerHTML=`
-    <div style="font-weight:700;font-size:0.85rem;color:var(--acc);margin-bottom:12px;">📝 Image dekh ke fill karo</div>
-    <div class="fg"><label>Subject</label><input type="text" id="iq_sub" placeholder="Subject..."/></div>
-    <div class="fg"><label>Question *</label><textarea id="iq_q" style="min-height:60px;" placeholder="Question text..."></textarea></div>
-    <div class="opts-grid" style="margin-bottom:12px;">
-      <div class="opt-row"><div class="opt-badge" style="background:linear-gradient(135deg,#4f7fff,#7c3aed)">A</div><input type="text" id="iq_a" placeholder="Option A" style="width:100%;padding:9px 10px;background:var(--s2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.86rem;"/></div>
-      <div class="opt-row"><div class="opt-badge" style="background:linear-gradient(135deg,#10b981,#059669)">B</div><input type="text" id="iq_b" placeholder="Option B" style="width:100%;padding:9px 10px;background:var(--s2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.86rem;"/></div>
-      <div class="opt-row"><div class="opt-badge" style="background:linear-gradient(135deg,#f59e0b,#d97706)">C</div><input type="text" id="iq_c" placeholder="Option C" style="width:100%;padding:9px 10px;background:var(--s2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.86rem;"/></div>
-      <div class="opt-row"><div class="opt-badge" style="background:linear-gradient(135deg,#ef4444,#dc2626)">D</div><input type="text" id="iq_d" placeholder="Option D" style="width:100%;padding:9px 10px;background:var(--s2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.86rem;"/></div>
-    </div>
-    <div class="correct-row">
-      <label>✅ Correct:</label>
-      <select id="iq_corr"><option>A</option><option>B</option><option>C</option><option>D</option></select>
-      <input class="explain-input" id="iq_exp" placeholder="Explanation..."/>
-    </div>
-    <div class="btn-row" style="margin-top:4px;">
-      <button class="btn btn-green" onclick="saveImgQ(true)">💾 Image ke saath</button>
-      <button class="btn btn-ghost" onclick="saveImgQ(false)">💾 Sirf Text</button>
-    </div>
-    <button class="btn btn-ghost" style="margin-top:8px;" onclick="addAnotherFromImg()">➕ Isi image se aur question</button>`;
-}
-function saveImgQ(withImg){
-  const q=document.getElementById('iq_q')?.value.trim();
-  const A=document.getElementById('iq_a')?.value.trim();
-  const B=document.getElementById('iq_b')?.value.trim();
-  const C=document.getElementById('iq_c')?.value.trim();
-  const D=document.getElementById('iq_d')?.value.trim();
-  if(!q||!A||!B||!C||!D){toast('Saare fields bharo!','error');return;}
-  questions.push({id:Date.now(),qText:q,options:{A,B,C,D},correct:document.getElementById('iq_corr').value,subject:document.getElementById('iq_sub')?.value.trim()||'',explanation:document.getElementById('iq_exp')?.value.trim()||'',image:withImg?pickedImgData:null});
-  save();toast('✅ Saved!','success');clearImgForm();
-}
-function clearImgForm(){['iq_q','iq_a','iq_b','iq_c','iq_d','iq_exp','iq_sub'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});const c=document.getElementById('iq_corr');if(c)c.value='A';}
-function addAnotherFromImg(){clearImgForm();document.getElementById('imgForm').scrollIntoView({behavior:'smooth'});}
-
-function pickQImg(){document.getElementById('qImgInput').click();}
-function onQImgChange(e){
-  const f=e.target.files[0];if(!f)return;
-  const r=new FileReader();
-  r.onload=ev=>{manualQImg=ev.target.result;const p=document.getElementById('qImgPrev');p.style.display='block';p.innerHTML=`<img src="${ev.target.result}" style="max-width:120px;max-height:80px;border-radius:7px;border:1px solid var(--border);"/><span style="cursor:pointer;color:var(--red);font-size:0.85rem;margin-left:8px;" onclick="manualQImg=null;document.getElementById('qImgPrev').style.display='none'">✕</span>`;};
-  r.readAsDataURL(f);
-}
-
-function addManual(){
-  const q=document.getElementById('mq').value.trim();
-  const A=document.getElementById('ma').value.trim();
-  const B=document.getElementById('mb').value.trim();
-  const C=document.getElementById('mc').value.trim();
-  const D=document.getElementById('md').value.trim();
-  if(!q||!A||!B||!C||!D){toast('Saare fields bharo!','error');return;}
-  questions.push({id:Date.now(),qText:q,options:{A,B,C,D},correct:document.getElementById('mcorr').value,subject:document.getElementById('ms').value.trim(),explanation:document.getElementById('mexplain').value.trim(),image:manualQImg});
-  save();clearManual();toast('✅ Added!','success');
-}
-function clearManual(){['ms','mq','ma','mb','mc','md','mexplain'].forEach(id=>document.getElementById(id).value='');document.getElementById('mcorr').value='A';manualQImg=null;document.getElementById('qImgPrev').style.display='none';}
-
-function renderBank(){
-  const c=document.getElementById('bankList');
-  const kw=(document.getElementById('searchBar')?.value||'').toLowerCase();
-  const list=questions.filter(q=>q.qText.toLowerCase().includes(kw)||(q.subject||'').toLowerCase().includes(kw));
-  if(!list.length){c.innerHTML=`<div class="empty"><div class="empty-icon">📭</div><h3>${questions.length?'Koi match nahi':'Bank khaali hai'}</h3></div>`;return;}
-  c.innerHTML=list.map((q,i)=>`<div class="q-item"><div class="q-num">${i+1}</div><div class="q-body">${q.image?`<img src="${q.image}" class="q-img-thumb" onclick="openModal('${q.image}')"/>`:''}<div class="q-text">${q.qText||'<em style="color:var(--muted)">Image question</em>'}</div><div class="chips">${q.subject?`<span class="chip s">${q.subject}</span>`:''}<span class="chip c">✅ ${q.correct}: ${q.options[q.correct]}</span></div></div><span class="q-del" onclick="delQ(${q.id})">🗑️</span></div>`).join('');
-}
-function delQ(id){questions=questions.filter(q=>q.id!==id);save();renderBank();}
-function clearAll(){if(!questions.length)return;if(!confirm(`${questions.length} questions delete honge?`))return;questions=[];save();renderBank();}
-
-function updateSetupStats(){
-  const subs=[...new Set(questions.map(q=>q.subject).filter(Boolean))];
-  const el=document.getElementById('setupStats');
-  if(el)el.innerHTML=`<div class="stat-box"><div class="stat-val">${questions.length}</div><div class="stat-lbl">Questions</div></div><div class="stat-box"><div class="stat-val">${subs.length}</div><div class="stat-lbl">Subjects</div></div>`;
-}
-function updateSubjectSel(){
-  const sel=document.getElementById('tSub');if(!sel)return;
-  const subs=[...new Set(questions.map(q=>q.subject).filter(Boolean))];
-  sel.innerHTML='<option value="all">All Subjects</option>';
-  subs.forEach(s=>sel.innerHTML+=`<option value="${s}">${s}</option>`);
-}
-
-function shuffle(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;}
-
-function startExam(){
-  const sub=document.getElementById('tSub').value;
-  let pool=sub==='all'?questions:questions.filter(q=>q.subject===sub);
-  if(!pool.length){toast('Pehle questions add karo!','error');return;}
-  const num=Math.min(parseInt(document.getElementById('tNum').value)||10,pool.length);
-  const mins=parseInt(document.getElementById('tTime').value)||30;
-  testQ=shuffle(pool).slice(0,num).map(q=>{
-    const keys=shuffle(['A','B','C','D']);const opts={};let nc='A';
-    keys.forEach((orig,idx)=>{const nk=['A','B','C','D'][idx];opts[nk]=q.options[orig];if(orig===q.correct)nc=nk;});
-    return{...q,options:opts,correct:nc};
-  });
-  answers={};
-  document.querySelectorAll('.page').forEach(el=>el.classList.remove('active'));
-  document.getElementById('bottomNav').style.display='none';
-  document.getElementById('examView').style.display='block';
-  document.getElementById('resultView').style.display='none';
-  renderExamQ();renderDots();
-  if(timerInt)clearInterval(timerInt);
-  timeLeft=mins*60;tick();
-  timerInt=setInterval(()=>{timeLeft--;tick();if(timeLeft<=0){clearInterval(timerInt);submitExam(false);}},1000);
-  document.getElementById('scrollBody').scrollTop=0;
-}
-
-function tick(){
-  const m=Math.floor(timeLeft/60).toString().padStart(2,'0');
-  const s=(timeLeft%60).toString().padStart(2,'0');
-  const el=document.getElementById('timerEl');
-  el.textContent=m+':'+s;
-  el.className='timer-txt'+(timeLeft<=60?' danger':timeLeft<=300?' warn':'');
-}
-
-function renderExamQ(){
-  document.getElementById('examQs').innerHTML=testQ.map((q,i)=>`
-    <div class="exam-qcard" id="eqc${i}">
-      <div class="eq-head"><div class="eq-num">Q.${i+1}</div>${q.subject?`<div class="eq-subj">${q.subject}</div>`:''}</div>
-      ${q.image?`<img src="${q.image}" class="eq-img" onclick="openModal('${q.image}')"/>`:'' }
-      <div class="eq-textbox"><div class="eq-text">${q.qText||''}</div></div>
-      <div class="eq-opts">
-        ${['A','B','C','D'].map(opt=>`<div class="eq-opt" id="eop${i}_${opt}" onclick="pick(${i},'${opt}')"><div class="okey">${opt}</div><span class="eq-opt-text">${q.options[opt]||''}</span></div>`).join('')}
-      </div>
-    </div>`).join('');
-}
-
-function pick(qi,opt){
-  answers[qi]=opt;
-  ['A','B','C','D'].forEach(o=>{const el=document.getElementById(`eop${qi}_${o}`);if(el)el.classList.toggle('sel',o===opt);});
-  renderDots();
-  const done=Object.keys(answers).length;
-  document.getElementById('progFill').style.width=(done/testQ.length*100)+'%';
-  document.getElementById('progTxt').textContent=`${done}/${testQ.length}`;
-}
-
-function renderDots(){
-  document.getElementById('qdots').innerHTML=testQ.map((_,i)=>`<div class="qdot${answers[i]?' a':''}" onclick="document.getElementById('eqc${i}').scrollIntoView({behavior:'smooth',block:'start'})">${i+1}</div>`).join('');
-}
-
-function submitExam(ask){
-  const unanswered=testQ.length-Object.keys(answers).length;
-  if(ask&&unanswered>0&&timeLeft>0&&!confirm(`${unanswered} questions chhode hain. Submit karo?`))return;
-  if(timerInt)clearInterval(timerInt);
-  let c=0,w=0,s=0;
-  testQ.forEach((q,i)=>{const a=answers[i];if(!a)s++;else if(a===q.correct)c++;else w++;});
-  const total=testQ.length,pct=Math.round(c/total*100);
-  document.getElementById('examView').style.display='none';
-  document.getElementById('resultView').style.display='block';
-  document.getElementById('bottomNav').style.display='none';
-  document.getElementById('scorePct').textContent=pct+'%';
-  document.getElementById('scoreDonut').style.setProperty('--p',pct+'%');
-  const gs=[[90,'🏆 Outstanding!','Zabardast! Aap champion hain!'],[75,'🌟 Excellent!','Bahut accha, keep it up!'],[60,'👍 Good!','Accha kiya!'],[40,'📚 Keep Going!','Practice karte raho!'],[0,'💪 Try Again!','Haar mat maano!']];
-  const [,g,m]=gs.find(([t])=>pct>=t);
-  document.getElementById('rGrade').textContent=g;
-  document.getElementById('rMsg').textContent=m;
-  document.getElementById('rsC').textContent=c;
-  document.getElementById('rsW').textContent=w;
-  document.getElementById('rsS').textContent=s;
-  document.getElementById('rsT').textContent=total;
-  document.getElementById('reviewArea').style.display='none';
-  document.getElementById('scrollBody').scrollTop=0;
-}
-
-function toggleReview(){
-  const a=document.getElementById('reviewArea');
-  if(a.style.display==='block'){a.style.display='none';return;}
-  a.style.display='block';
-  a.innerHTML=testQ.map((q,i)=>{
-    const ua=answers[i],isC=ua===q.correct;
-    const cls=!ua?'rs-i':isC?'rc':'rw';
-    const sc=!ua?'var(--gold)':isC?'var(--green)':'var(--red)';
-    const st=!ua?'⬜ Skip':isC?'✅ Sahi':'❌ Galat';
-    return`<div class="review-item ${cls}">
-      <div class="rv-st" style="color:${sc}">${st} — Q.${i+1}</div>
-      ${q.image?`<img src="${q.image}" style="max-width:140px;max-height:80px;border-radius:6px;border:1px solid var(--border);margin-bottom:7px;cursor:pointer;" onclick="openModal('${q.image}')"/>`:'' }
-      <div style="font-weight:600;font-size:0.87rem;margin-bottom:8px;">${q.qText}</div>
-      <div style="display:flex;flex-wrap:wrap;gap:4px;">
-        ${['A','B','C','D'].map(opt=>{
-          let bg='var(--s2)',bc='var(--border)',extra='';
-          if(opt===q.correct){bg='rgba(16,185,129,.15)';bc='var(--green)';extra=' ✓';}
-          if(opt===ua&&opt!==q.correct){bg='rgba(239,68,68,.12)';bc='var(--red)';extra=' ←';}
-          return`<span style="padding:4px 10px;border-radius:7px;font-size:0.75rem;font-weight:600;background:${bg};border:1px solid ${bc};">${opt}: ${q.options[opt]}${extra}</span>`;
-        }).join('')}
-      </div>
-      ${q.explanation?`<div style="font-size:0.72rem;color:var(--muted);margin-top:6px;">💡 ${q.explanation}</div>`:''}
-    </div>`;
-  }).join('');
-}
-
-function retake(){document.getElementById('resultView').style.display='none';startExam();}
-function backToSetup(){document.getElementById('resultView').style.display='none';goPage('setup');}
-
-function exportQ(){
-  if(!questions.length){toast('Koi question nahi','error');return;}
-  const a=document.createElement('a');
-  a.href='data:application/json,'+encodeURIComponent(JSON.stringify(questions,null,2));
-  a.download='mock-questions.json';a.click();toast('✅ Exported!','success');
-}
-function importQ(){
-  const inp=document.createElement('input');inp.type='file';inp.accept='.json';
-  inp.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{const d=JSON.parse(ev.target.result);questions=[...questions,...d];save();toast(`✅ ${d.length} import ho gaye!`,'success');}catch(e){toast('Invalid file','error');}};r.readAsText(f);};inp.click();
-}
-
-function openModal(src){document.getElementById('modalImg').src=src;document.getElementById('modal').classList.add('open');}
-function closeModal(){document.getElementById('modal').classList.remove('open');}
-
-save();
-</script>
-</body>
-</html>
