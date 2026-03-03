@@ -259,6 +259,66 @@ input,textarea,select,button{font-family:inherit;}
 .qimg-thumb-wrap img{max-width:110px;max-height:80px;border-radius:8px;border:1px solid var(--border);cursor:pointer;}
 .qimg-thumb-wrap .rm-btn{position:absolute;top:-5px;right:-5px;background:var(--red);color:white;border-radius:50%;width:18px;height:18px;font-size:0.65rem;display:flex;align-items:center;justify-content:center;cursor:pointer;border:none;}
 
+/* ===== SUBJECT COLORS ===== */
+.schip{padding:2px 9px;border-radius:10px;font-size:0.68rem;font-weight:700;color:white;display:inline-block;}
+
+/* ===== PER-Q TIMER ===== */
+.qtimer-badge{background:rgba(79,127,255,.15);border:1px solid rgba(79,127,255,.3);border-radius:8px;padding:3px 9px;font-size:0.7rem;font-weight:700;color:var(--acc);font-variant-numeric:tabular-nums;flex-shrink:0;}
+.qtimer-badge.warn{background:rgba(245,158,11,.15);border-color:rgba(245,158,11,.3);color:var(--gold);}
+.qtimer-badge.danger{background:rgba(239,68,68,.15);border-color:rgba(239,68,68,.3);color:var(--red);}
+.rv-qtime{font-size:0.7rem;color:var(--muted);margin-top:5px;}
+
+/* ===== PROGRESS PAGE ===== */
+.prog-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+.prog-stat{background:var(--s2);border:1px solid var(--border);border-radius:11px;padding:12px 10px;text-align:center;}
+.prog-stat-val{font-size:1.5rem;font-weight:800;background:linear-gradient(135deg,var(--acc),var(--acc2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.prog-stat-lbl{font-size:0.63rem;color:var(--muted);font-weight:600;margin-top:2px;}
+.hist-item{background:var(--s2);border:1px solid var(--border);border-radius:11px;padding:13px;margin-bottom:9px;display:flex;align-items:center;gap:12px;}
+.hist-score{width:50px;height:50px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.9rem;color:white;}
+.hist-body{flex:1;min-width:0;}
+.hist-title{font-size:0.88rem;font-weight:700;margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.hist-meta{font-size:0.7rem;color:var(--muted);}
+.hist-stats{display:flex;gap:6px;margin-top:4px;}
+.hist-stat{font-size:0.68rem;font-weight:600;padding:2px 7px;border-radius:6px;}
+.hist-stat.c{background:rgba(16,185,129,.15);color:var(--green);}
+.hist-stat.w{background:rgba(239,68,68,.12);color:var(--red);}
+.hist-stat.s{background:rgba(245,158,11,.12);color:var(--gold);}
+.mini-chart{height:70px;display:flex;align-items:flex-end;gap:4px;padding:0 4px;}
+.mini-bar{flex:1;border-radius:4px 4px 0 0;min-height:4px;cursor:pointer;position:relative;}
+.mini-bar:hover::after{content:attr(data-tip);position:absolute;bottom:105%;left:50%;transform:translateX(-50%);background:#222;color:white;font-size:0.62rem;padding:2px 6px;border-radius:4px;white-space:nowrap;z-index:10;}
+.subj-acc-row{display:flex;align-items:center;gap:9px;margin-bottom:8px;}
+.subj-acc-label{font-size:0.75rem;font-weight:700;min-width:80px;flex-shrink:0;}
+.subj-acc-bar-wrap{flex:1;height:8px;background:var(--border);border-radius:4px;overflow:hidden;}
+.subj-acc-fill{height:100%;border-radius:4px;transition:width .5s;}
+.subj-acc-pct{font-size:0.72rem;font-weight:700;min-width:35px;text-align:right;}
+
+/* ===== STREAK ===== */
+.streak-hero{background:linear-gradient(135deg,rgba(245,158,11,.15),rgba(239,68,68,.1));border:1px solid rgba(245,158,11,.3);border-radius:14px;padding:18px 16px;text-align:center;margin-bottom:14px;}
+.streak-num{font-size:2.2rem;font-weight:800;color:var(--gold);line-height:1.1;}
+.streak-lbl{font-size:0.72rem;color:var(--muted);font-weight:600;margin-bottom:8px;}
+.streak-days{display:flex;gap:6px;justify-content:center;margin-top:10px;}
+.sday{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:0.62rem;font-weight:700;border:1px solid var(--border);color:var(--muted);}
+.sday.done{background:rgba(245,158,11,.2);border-color:rgba(245,158,11,.4);color:var(--gold);}
+.sday.today{background:var(--gold);border-color:var(--gold);color:#111;}
+
+/* ===== BADGES ===== */
+.badges-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;}
+.badge-item{background:var(--s2);border:1px solid var(--border);border-radius:11px;padding:12px 8px;text-align:center;}
+.badge-item.earned{border-color:rgba(245,158,11,.4);background:rgba(245,158,11,.08);}
+.badge-icon{font-size:1.8rem;line-height:1;margin-bottom:4px;filter:grayscale(1);opacity:.35;}
+.badge-item.earned .badge-icon{filter:none;opacity:1;}
+.badge-name{font-size:0.62rem;font-weight:700;color:var(--muted);}
+.badge-item.earned .badge-name{color:var(--gold);}
+
+/* ===== WEAK TOPICS ===== */
+.weak-item{background:var(--s2);border:1px solid var(--border);border-radius:11px;padding:13px;margin-bottom:9px;}
+.weak-head{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.weak-label{flex:1;font-size:0.85rem;font-weight:700;}
+.weak-pct-badge{padding:3px 10px;border-radius:8px;font-size:0.72rem;font-weight:800;}
+.weak-bar-wrap{height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin-bottom:7px;}
+.weak-bar-fill{height:100%;border-radius:3px;}
+.weak-info{font-size:0.7rem;color:var(--muted);}
+
 /* ===== PWA INSTALL BANNER ===== */
 #pwa-banner{
   position:fixed;bottom:0;left:0;right:0;z-index:99999;
@@ -318,16 +378,16 @@ input,textarea,select,button{font-family:inherit;}
       <div class="card-head" style="margin-bottom:10px;">📄 PDF Viewer</div>
       <div id="homePdfEmpty" style="text-align:center;padding:18px 0;">
         <div style="font-size:2.2rem;margin-bottom:8px;opacity:.4;">📄</div>
-        <p style="font-size:0.78rem;color:var(--muted);margin-bottom:12px;">PDF upload karein — yahan padh sakte hain</p>
+        <p style="font-size:0.78rem;color:var(--muted);margin-bottom:12px;">Upload a PDF — read it right here</p>
         <label style="display:inline-flex;align-items:center;gap:7px;padding:10px 18px;background:linear-gradient(135deg,var(--acc),var(--acc2));color:white;border-radius:10px;font-size:0.83rem;font-weight:700;cursor:pointer;">
-          📂 PDF Kholein
+          📂 Open PDF
           <input type="file" accept="application/pdf" style="display:none" onchange="loadHomePdf(event)">
         </label>
       </div>
       <div id="homePdfViewer" style="display:none;">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
           <span id="homePdfName" style="flex:1;font-size:0.75rem;color:var(--acc);font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
-          <button onclick="clearHomePdf()" style="background:var(--red);color:white;border:none;border-radius:7px;padding:4px 10px;font-size:0.72rem;font-weight:700;cursor:pointer;">✕ Hatao</button>
+          <button onclick="clearHomePdf()" style="background:var(--red);color:white;border:none;border-radius:7px;padding:4px 10px;font-size:0.72rem;font-weight:700;cursor:pointer;">✕ Remove</button>
         </div>
         <!-- Page nav -->
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
@@ -340,7 +400,7 @@ input,textarea,select,button{font-family:inherit;}
           <canvas id="homePdfCanvas" style="display:block;width:100%;"></canvas>
         </div>
         <!-- Use in test button -->
-        <button onclick="useHomePdfInTest()" style="width:100%;margin-top:10px;padding:10px;background:rgba(79,127,255,.15);border:1px solid var(--acc);color:var(--acc);border-radius:9px;font-size:0.82rem;font-weight:700;cursor:pointer;">🎯 Is PDF ko Test mein Use Karein</button>
+        <button onclick="useHomePdfInTest()" style="width:100%;margin-top:10px;padding:10px;background:rgba(79,127,255,.15);border:1px solid var(--acc);color:var(--acc);border-radius:9px;font-size:0.82rem;font-weight:700;cursor:pointer;">🎯 Use This PDF in Test</button>
       </div>
     </div>
 
@@ -354,8 +414,8 @@ input,textarea,select,button{font-family:inherit;}
       </div>
     </div>
     <div class="card">
-      <div class="card-head">📲 Phone mein Save karein</div>
-      <p style="font-size:0.78rem;color:var(--muted);margin-bottom:12px;">Yeh file download karein, Chrome se open karein — bilkul app jaisa!</p>
+      <div class="card-head">📲 Save to Your Phone</div>
+      <p style="font-size:0.78rem;color:var(--muted);margin-bottom:12px;">Download this file and open it in Chrome — works just like a native app!</p>
       <button class="btn btn-primary" onclick="downloadApp()">⬇️ Download SmartMockTest.html</button>
     </div>
     <div style="height:20px;"></div>
@@ -381,12 +441,12 @@ input,textarea,select,button{font-family:inherit;}
     <!-- PDF Upload for Test -->
     <div class="card">
       <div class="card-head">📄 PDF for Test (optional)</div>
-      <p style="font-size:0.78rem;color:var(--muted);margin-bottom:12px;">PDF upload karein — test ke time upar dikhega, neeche questions honge.</p>
+      <p style="font-size:0.78rem;color:var(--muted);margin-bottom:12px;">Upload a PDF — it will appear on top while questions are shown below during the test.</p>
       <div class="upload-area" onclick="document.getElementById('testPdfIn').click()" id="pdfDropZone">
         <input type="file" id="testPdfIn" accept="application/pdf" style="display:none" onchange="onTestPdfPicked(event)">
         <div style="font-size:1.8rem;margin-bottom:6px;">📄</div>
         <h3>Tap to select PDF</h3>
-        <p>Test ke time scroll karke padh sakte hain</p>
+        <p>Scroll and read during the test</p>
       </div>
       <div id="testPdfChip" style="display:none;margin-top:10px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.3);border-radius:9px;padding:10px 13px;display:none;align-items:center;gap:10px;">
         <span style="font-size:1.2rem;">📄</span>
@@ -405,7 +465,7 @@ input,textarea,select,button{font-family:inherit;}
       <!-- Answer Key for PDF test -->
       <div id="ansKeySetupBox" style="display:none;margin-bottom:12px;">
         <button class="btn btn-gold" onclick="openSetupAnsKey()">🗝️ Set Answer Key (optional)</button>
-        <div style="font-size:0.7rem;color:var(--muted);margin-top:5px;">PDF test ke liye manually answers set karein</div>
+        <div style="font-size:0.7rem;color:var(--muted);margin-top:5px;">Manually set answers for a PDF-based test</div>
       </div>
 
       <button class="btn btn-primary" onclick="startExam()">🚀 Start Test</button>
@@ -414,6 +474,64 @@ input,textarea,select,button{font-family:inherit;}
   </div>
 
 </div><!-- /scroll-body -->
+
+<!-- ===================== -->
+<!-- PROGRESS PAGE OVERLAY -->
+<!-- ===================== -->
+<div id="page-progress-overlay" style="display:none;position:fixed;inset:0;z-index:500;background:var(--bg);display:none;flex-direction:column;">
+  <div class="topbar">
+    <div class="topbar-logo">📊</div>
+    <span class="topbar-title">Progress & Stats</span>
+    <span class="topbar-badge" id="topBadge2">0 Q</span>
+  </div>
+  <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px;">
+    <!-- Streak Hero -->
+    <div class="streak-hero">
+      <div style="font-size:2.5rem;line-height:1;">🔥</div>
+      <div class="streak-num" id="streakNum">0</div>
+      <div class="streak-lbl">Day Streak</div>
+      <div class="streak-days" id="streakDays"></div>
+    </div>
+    <!-- Overall Stats -->
+    <div class="card">
+      <div class="card-head">📊 Overall Stats</div>
+      <div class="prog-grid" id="overallStats"></div>
+      <div style="font-size:0.73rem;font-weight:700;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px;">Score Trend (Last 10)</div>
+      <div class="mini-chart" id="miniChart"></div>
+    </div>
+    <!-- Subject Accuracy -->
+    <div class="card">
+      <div class="card-head">🎯 Subject Accuracy</div>
+      <div id="subjAccuracy"></div>
+    </div>
+    <!-- Badges -->
+    <div class="card">
+      <div class="card-head">🏆 Badges</div>
+      <div class="badges-grid" id="badgesGrid"></div>
+    </div>
+    <!-- Weak Topics -->
+    <div class="card">
+      <div class="card-head">⚠️ Weak Topics
+        <button class="btn btn-gold btn-sm btn-inline" style="margin-left:auto;" onclick="startWeakTest()">🎯 Practice Weak</button>
+      </div>
+      <div id="weakList"></div>
+    </div>
+    <!-- History -->
+    <div class="card">
+      <div class="card-head">📋 Test History
+        <button class="btn btn-red btn-sm btn-inline" style="margin-left:auto;" onclick="clearHistory()">🗑️</button>
+      </div>
+      <div id="histList"></div>
+    </div>
+    <div style="height:20px;"></div>
+  </div>
+  <div class="bottom-nav">
+    <div class="bnav-item" onclick="hideProgressPage()"><span class="bnav-icon">➕</span>Add</div>
+    <div class="bnav-item" onclick="hideProgressPage();goPage('bank')"><span class="bnav-icon">📚</span>Bank</div>
+    <div class="bnav-item" onclick="hideProgressPage();goPage('setup')"><span class="bnav-icon">🎯</span>Test</div>
+    <div class="bnav-item active"><span class="bnav-icon">📊</span>Stats</div>
+  </div>
+</div>
 
 <!-- ===================== -->
 <!-- EXAM VIEW (SPLIT)     -->
@@ -440,8 +558,8 @@ input,textarea,select,button{font-family:inherit;}
     <div class="pdf-half" id="pdfHalf">
       <div class="pdf-no-file" id="pdfNoFile">
         <span style="font-size:2.5rem;opacity:.3;">📄</span>
-        <span>Koi PDF load nahi hai</span>
-        <span style="font-size:0.7rem;">Setup mein PDF upload karein</span>
+        <span>No PDF loaded</span>
+        <span style="font-size:0.7rem;">Upload a PDF in Setup</span>
       </div>
       <div id="pdfViewer" style="display:none;width:100%;height:100%;overflow-y:auto;background:#1a1a2e;-webkit-overflow-scrolling:touch;">
         <div style="display:flex;align-items:center;justify-content:center;gap:8px;padding:5px 10px;background:rgba(0,0,0,.7);position:sticky;top:0;z-index:10;">
@@ -506,6 +624,7 @@ input,textarea,select,button{font-family:inherit;}
   <div class="bnav-item active" id="bnav-add" onclick="goPage('add')"><span class="bnav-icon">➕</span>Add</div>
   <div class="bnav-item" id="bnav-bank" onclick="goPage('bank')"><span class="bnav-icon">📚</span>Bank</div>
   <div class="bnav-item" id="bnav-setup" onclick="goPage('setup')"><span class="bnav-icon">🎯</span>Test</div>
+  <div class="bnav-item" id="bnav-progress" onclick="showProgressPage()"><span class="bnav-icon">📊</span>Stats</div>
 </div>
 
 <!-- POPUP: FROM IMAGE -->
@@ -522,7 +641,7 @@ input,textarea,select,button{font-family:inherit;}
         <div class="upload-area" onclick="document.getElementById('imgFileIn').click()">
           <input type="file" id="imgFileIn" accept="image/*" style="display:none" onchange="onImgFilePicked(event)" capture="environment">
           <div style="font-size:2.2rem;margin-bottom:8px;">📷</div>
-          <h3>Camera / Gallery se select karein</h3>
+          <h3>Select from Camera or Gallery</h3>
           <p>JPG, PNG supported</p>
         </div>
       </div>
@@ -618,7 +737,7 @@ input,textarea,select,button{font-family:inherit;}
       <button class="popup-close" onclick="closePopup('setupAnsKeyPopup')">✕</button>
     </div>
     <div class="popup-body">
-      <div style="font-size:0.78rem;color:var(--muted);margin-bottom:12px;">PDF ke questions ke liye answers set karein. Result mein inka score dikhega.</div>
+      <div style="font-size:0.78rem;color:var(--muted);margin-bottom:12px;">Set answers for PDF questions. Your score will be calculated on submit.</div>
       <div class="anskey-grid" id="setupAnsKeyGrid"></div>
     </div>
     <div class="popup-footer">
@@ -641,10 +760,29 @@ let questions = [];
 let testQ = [], answers = {}, timerInt = null, timeLeft = 0;
 let imgPickedData = null, imgExpMedia = [];
 let mQImgData = null, mExpMedia = [];
-let testPdfData = null; // base64 of PDF for test
-let pdfAnsKey = {}; // {0:'A', 1:'B', ...} for PDF-only test
-let pdfQCount = 10; // how many Q in PDF
+let testPdfData = null;
+let pdfAnsKey = {};
+let pdfQCount = 10;
 let isPdfOnlyTest = false;
+let testHistory = [], streakData = {};
+let qTimers = {}, qTimerStart = 0, currentVisibleQ = 0, qTimerInterval = null;
+
+/* ===== SUBJECT COLOR MAP ===== */
+const SUB_COLORS=['#4f7fff','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec4899','#06b6d4','#84cc16','#f97316','#6366f1'];
+const subColorMap={};
+function buildColorMap(){
+  const subs=[...new Set(questions.map(q=>q.subject).filter(Boolean))];
+  subs.forEach((s,i)=>{if(!subColorMap[s])subColorMap[s]=SUB_COLORS[i%SUB_COLORS.length];});
+}
+function getSubjectColor(sub){
+  if(!sub)return'#5a6178';
+  buildColorMap();
+  return subColorMap[sub]||SUB_COLORS[Object.keys(subColorMap).length%SUB_COLORS.length];
+}
+function subChip(sub){
+  if(!sub)return'';
+  return`<span class="schip" style="background:${getSubjectColor(sub)}">${sub}</span>`;
+}
 
 /* ===== localStorage ===== */
 function lsSave(){
@@ -653,7 +791,7 @@ function lsSave(){
     localStorage.setItem('smt_v3', d);
     updateStorageBar(d.length);
   }catch(e){
-    if(e.name==='QuotaExceededError') toast('⚠️ Storage full! Export karein.','error');
+    if(e.name==='QuotaExceededError') toast('⚠️ Storage full! Please export your questions.','error');
   }
 }
 function lsLoad(){
@@ -673,6 +811,8 @@ function save(){
   updateSubjectSel();updateSetupStats();updateAddPageStats();
 }
 lsLoad(); save();
+try{testHistory=JSON.parse(localStorage.getItem('smt_history')||'[]');}catch(e){}
+try{streakData=JSON.parse(localStorage.getItem('smt_streak')||'{}');}catch(e){}
 
 /* ===== TOAST ===== */
 function toast(msg,type='info'){
@@ -879,7 +1019,7 @@ function renderBank(){
         ${q.image?`<img src="${q.image}" class="q-img-thumb" onclick="openImgViewer('${q.image}')" />`:''}
         <div class="q-text">${q.qText||'<em style="color:var(--muted)">Question</em>'}</div>
         <div class="chips">
-          ${q.subject?`<span class="chip s">${q.subject}</span>`:''}
+          ${q.subject?subChip(q.subject):''}
           <span class="chip c">✅ ${q.correct}: ${q.options[q.correct]}</span>
           ${q.expMedia&&q.expMedia.length?`<span class="chip m">📎 ${q.expMedia.length}</span>`:''}
         </div>
@@ -934,7 +1074,7 @@ function startExam(){
   if(testPdfData && questions.length===0){
     // Create dummy questions from answer key
     if(Object.keys(pdfAnsKey).length===0){
-      toast('Bank mein questions add karein ya Answer Key set karein!','error');return;
+      toast('Add questions to the bank or set an Answer Key!','error');return;
     }
     isPdfOnlyTest=true;
     testQ=Array.from({length:Math.min(num,Object.keys(pdfAnsKey).length)},(_,i)=>({
@@ -945,7 +1085,7 @@ function startExam(){
   } else {
     isPdfOnlyTest=false;
     let pool=sub==='all'?questions:questions.filter(q=>q.subject===sub);
-    if(!pool.length){toast('Questions add karein!','error');return;}
+    if(!pool.length){toast('Please add questions first!','error');return;}
     testQ=shuffle(pool).slice(0,Math.min(num,pool.length)).map(q=>{
       const keys=shuffle(['A','B','C','D']);const opts={};let nc='A';
       keys.forEach((orig,idx)=>{const nk=['A','B','C','D'][idx];opts[nk]=q.options[orig];if(orig===q.correct)nc=nk;});
@@ -954,6 +1094,8 @@ function startExam(){
   }
 
   answers={};
+  qTimers={};qTimerStart=Date.now();currentVisibleQ=0;
+
   // Hide scroll-body, show exam
   document.querySelectorAll('.page').forEach(e=>e.classList.remove('active'));
   document.getElementById('scrollBody').style.display='none';
@@ -968,8 +1110,37 @@ function startExam(){
 
   renderExamQ();renderDots();
   if(timerInt)clearInterval(timerInt);
+  if(qTimerInterval)clearInterval(qTimerInterval);
   timeLeft=mins*60;tick();
   timerInt=setInterval(()=>{timeLeft--;tick();if(timeLeft<=0){clearInterval(timerInt);submitExam(false);}},1000);
+
+  // Per-question timer
+  qTimerInterval=setInterval(()=>{
+    const now=Date.now();
+    const elapsed=Math.floor((now-qTimerStart)/1000);
+    for(let i=0;i<testQ.length;i++){
+      const el=document.getElementById('qt'+i);if(!el)continue;
+      const t=(qTimers[i]||0)+(i===currentVisibleQ?elapsed:0);
+      const m=Math.floor(t/60),s=t%60;
+      el.textContent=m+':'+(s<10?'0':'')+s;
+      el.className='qtimer-badge'+(t>120?' danger':t>60?' warn':'');
+    }
+  },1000);
+
+  // Intersection observer for per-Q tracking
+  setTimeout(()=>{
+    const obs=new IntersectionObserver(entries=>{
+      entries.forEach(e=>{
+        const id=parseInt(e.target.id.replace('eqc',''));
+        if(e.isIntersecting&&!isNaN(id)&&id!==currentVisibleQ){
+          const now=Date.now();
+          qTimers[currentVisibleQ]=(qTimers[currentVisibleQ]||0)+Math.floor((now-qTimerStart)/1000);
+          currentVisibleQ=id;qTimerStart=now;
+        }
+      });
+    },{threshold:0.5});
+    document.querySelectorAll('.exam-qcard').forEach(el=>obs.observe(el));
+  },300);
 }
 
 function tick(){
@@ -991,7 +1162,11 @@ function renderExamQ(){
   } else {
     document.getElementById('examQs').innerHTML=testQ.map((q,i)=>`
       <div class="exam-qcard" id="eqc${i}">
-        <div class="eq-head"><div class="eq-num">Q.${i+1}</div>${q.subject?`<div class="eq-subj">${q.subject}</div>`:''}</div>
+        <div class="eq-head">
+          <div class="eq-num">Q.${i+1}</div>
+          ${q.subject?`<div class="eq-subj" style="color:${getSubjectColor(q.subject)}">${q.subject}</div>`:''}
+          <div class="qtimer-badge" id="qt${i}">0:00</div>
+        </div>
         ${q.image?`<img src="${q.image}" class="eq-img" onclick="openImgViewer('${q.image}')" />`:''}
         <div class="eq-text">${q.qText||''}</div>
         <div class="eq-opts">${['A','B','C','D'].map(opt=>`<div class="eq-opt" id="eop${i}_${opt}" onclick="pick(${i},'${opt}')"><div class="okey">${opt}</div><span>${q.options[opt]||''}</span></div>`).join('')}</div>
@@ -1017,9 +1192,29 @@ function submitExam(ask){
   const un=testQ.length-Object.keys(answers).length;
   if(ask&&un>0&&timeLeft>0&&!confirm(`${un} unanswered. Submit?`))return;
   if(timerInt)clearInterval(timerInt);
+  if(qTimerInterval)clearInterval(qTimerInterval);
+  // Finalize current Q timer
+  if(currentVisibleQ>=0){
+    qTimers[currentVisibleQ]=(qTimers[currentVisibleQ]||0)+Math.floor((Date.now()-qTimerStart)/1000);
+  }
   let c=0,w=0,s=0;
   testQ.forEach((q,i)=>{const a=answers[i];if(!a)s++;else if(a===q.correct)c++;else w++;});
   const total=testQ.length,pct=Math.round(c/total*100);
+
+  // Save to history
+  const entry={
+    id:Date.now(),
+    title:document.getElementById('tTitle').value||'Mock Test',
+    date:new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}),
+    pct,c,w,s,total,
+    subject:document.getElementById('tSub').value,
+    qTimers:{...qTimers},
+    details:testQ.map((q,i)=>({id:q.id,subject:q.subject||'',correct:answers[i]===q.correct,skipped:!answers[i]}))
+  };
+  testHistory.unshift(entry);
+  if(testHistory.length>50)testHistory=testHistory.slice(0,50);
+  try{localStorage.setItem('smt_history',JSON.stringify(testHistory));}catch(e){}
+  updateStreak();
 
   document.getElementById('examView').style.display='none';
   document.getElementById('pdfViewer').style.display='none'; examPdf={doc:null,page:1,total:1,rendering:false};
@@ -1066,8 +1261,9 @@ function toggleReview(){
       const cls=!ua?'rsi':isC?'rc':'rw';
       const sc=!ua?'var(--gold)':isC?'var(--green)':'var(--red)';
       const st=!ua?'⬜ Skip':isC?'✅ Correct':'❌ Wrong';
+      const qt=qTimers[i]||0;const qm=Math.floor(qt/60),qs=qt%60;
       return`<div class="review-item ${cls}">
-        <div class="rv-st" style="color:${sc}">${st} — Q.${i+1}</div>
+        <div class="rv-st" style="color:${sc}">${st} — Q.${i+1} ${q.subject?subChip(q.subject):''}</div>
         ${q.image?`<img src="${q.image}" style="max-width:140px;max-height:80px;border-radius:6px;margin-bottom:7px;cursor:pointer;" onclick="openImgViewer('${q.image}')" />`:''}
         <div style="font-weight:600;font-size:0.87rem;margin-bottom:8px;">${q.qText}</div>
         <div style="display:flex;flex-wrap:wrap;gap:4px;">
@@ -1075,6 +1271,7 @@ function toggleReview(){
         </div>
         ${q.explanation?`<div style="font-size:0.78rem;color:var(--muted);margin-top:8px;">💡 ${q.explanation}</div>`:''}
         ${expMediaHTML(q.expMedia)}
+        <div class="rv-qtime">⏱️ Time: ${qm}:${qs<10?'0':''}${qs}${qt>90?' — <span style="color:var(--red)">Slow</span>':''}</div>
       </div>`;
     }).join('');
   }
@@ -1095,7 +1292,7 @@ function openPdfBlob(src){
     const b64=src.split(',')[1];const bin=atob(b64);const arr=new Uint8Array(bin.length);
     for(let i=0;i<bin.length;i++)arr[i]=bin.charCodeAt(i);
     window.open(URL.createObjectURL(new Blob([arr],{type:'application/pdf'})),'_blank');
-  }catch(e){toast('PDF open nahi hua','error');}
+  }catch(e){toast('Could not open PDF','error');}
 }
 
 /* ===== DOWNLOAD SELF ===== */
@@ -1104,6 +1301,194 @@ function downloadApp(){
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);
   a.download='SmartMockTest.html';a.click();
   URL.revokeObjectURL(a.href);toast('✅ Downloading...','success');
+}
+
+/* ===== STREAK ===== */
+function updateStreak(){
+  const today=new Date().toDateString();
+  const yesterday=new Date(Date.now()-86400000).toDateString();
+  if(streakData.lastDate===today){}
+  else if(streakData.lastDate===yesterday){streakData.count=(streakData.count||0)+1;streakData.lastDate=today;}
+  else{streakData.count=1;streakData.lastDate=today;}
+  if(!streakData.days)streakData.days=[];
+  if(!streakData.days.includes(today))streakData.days.push(today);
+  streakData.days=streakData.days.slice(-30);
+  try{localStorage.setItem('smt_streak',JSON.stringify(streakData));}catch(e){}
+}
+
+/* ===== PROGRESS PAGE ===== */
+const BADGE_DEFS=[
+  {id:'first',icon:'🎯',name:'First Test',check:()=>testHistory.length>=1},
+  {id:'ten',icon:'🔟',name:'10 Tests',check:()=>testHistory.length>=10},
+  {id:'century',icon:'💯',name:'100 Questions',check:()=>questions.length>=100},
+  {id:'streak7',icon:'🔥',name:'7 Day Streak',check:()=>(streakData.count||0)>=7},
+  {id:'ace',icon:'🏆',name:'Scored 90%+',check:()=>testHistory.some(h=>h.pct>=90)},
+  {id:'bulk',icon:'📦',name:'50 Questions',check:()=>questions.length>=50},
+  {id:'allsubj',icon:'🌈',name:'5 Subjects',check:()=>[...new Set(questions.map(q=>q.subject).filter(Boolean))].length>=5},
+  {id:'perfect',icon:'🌟',name:'Perfect Score',check:()=>testHistory.some(h=>h.pct===100)},
+  {id:'pdf',icon:'📄',name:'PDF Test',check:()=>testHistory.some(h=>h.isPdf)},
+];
+
+function showProgressPage(){
+  document.querySelectorAll('.bnav-item').forEach(e=>e.classList.remove('active'));
+  document.getElementById('bnav-progress').classList.add('active');
+  const pg=document.getElementById('page-progress-overlay');
+  pg.style.display='flex';
+  document.getElementById('topBadge2').textContent=questions.length+' Q';
+  renderProgressPage();
+}
+function hideProgressPage(){
+  document.getElementById('page-progress-overlay').style.display='none';
+  document.querySelectorAll('.bnav-item').forEach(e=>e.classList.remove('active'));
+  document.getElementById('bnav-add').classList.add('active');
+}
+function renderProgressPage(){
+  renderStreakUI();renderOverallStats();renderMiniChart();renderSubjectAccuracy();renderBadgesGrid();renderWeakTopics();renderHistoryList();
+}
+function renderStreakUI(){
+  const el=document.getElementById('streakNum');if(el)el.textContent=streakData.count||0;
+  const days=document.getElementById('streakDays');if(!days)return;
+  const dayNames=['S','M','T','W','T','F','S'];
+  const today=new Date();
+  days.innerHTML=Array.from({length:7},(_,i)=>{
+    const d=new Date(today);d.setDate(today.getDate()-(6-i));
+    const ds=d.toDateString();const isToday=i===6;
+    const done=streakData.days&&streakData.days.includes(ds);
+    return`<div class="sday${isToday?' today':done?' done':''}">${dayNames[d.getDay()]}</div>`;
+  }).join('');
+}
+function renderOverallStats(){
+  const el=document.getElementById('overallStats');if(!el)return;
+  const total=testHistory.length;
+  const avgPct=total?Math.round(testHistory.reduce((a,h)=>a+h.pct,0)/total):0;
+  const best=total?Math.max(...testHistory.map(h=>h.pct)):0;
+  const totalQDone=testHistory.reduce((a,h)=>a+h.total,0);
+  el.innerHTML=`
+    <div class="prog-stat"><div class="prog-stat-val">${total}</div><div class="prog-stat-lbl">Tests Done</div></div>
+    <div class="prog-stat"><div class="prog-stat-val">${avgPct}%</div><div class="prog-stat-lbl">Avg Score</div></div>
+    <div class="prog-stat"><div class="prog-stat-val">${best}%</div><div class="prog-stat-lbl">Best Score</div></div>
+    <div class="prog-stat"><div class="prog-stat-val">${totalQDone}</div><div class="prog-stat-lbl">Qs Attempted</div></div>`;
+}
+function renderMiniChart(){
+  const el=document.getElementById('miniChart');if(!el)return;
+  const last10=[...testHistory].slice(0,10).reverse();
+  if(!last10.length){el.innerHTML='<div style="color:var(--muted);font-size:0.75rem;padding:20px 0;width:100%;text-align:center;">No tests yet</div>';return;}
+  const max=Math.max(...last10.map(h=>h.pct),1);
+  el.innerHTML=last10.map(h=>{
+    const ht=Math.max(8,Math.round((h.pct/max)*60));
+    const col=h.pct>=75?'var(--green)':h.pct>=50?'var(--gold)':'var(--red)';
+    return`<div class="mini-bar" style="height:${ht}px;background:${col};" data-tip="${h.pct}% — ${h.date}"></div>`;
+  }).join('');
+}
+function renderSubjectAccuracy(){
+  const el=document.getElementById('subjAccuracy');if(!el)return;
+  const subStats={};
+  testHistory.forEach(h=>{
+    if(!h.details)return;
+    h.details.forEach(d=>{
+      if(!d.subject)return;
+      if(!subStats[d.subject])subStats[d.subject]={c:0,t:0};
+      subStats[d.subject].t++;
+      if(d.correct)subStats[d.subject].c++;
+    });
+  });
+  const subs=Object.keys(subStats);
+  if(!subs.length){el.innerHTML='<div style="color:var(--muted);font-size:0.75rem;">Complete tests to see subject accuracy.</div>';return;}
+  el.innerHTML=subs.map(s=>{
+    const st=subStats[s];const pct=Math.round(st.c/st.t*100);
+    const col=pct>=75?'var(--green)':pct>=50?'var(--gold)':'var(--red)';
+    return`<div class="subj-acc-row">
+      <div class="subj-acc-label">${subChip(s)}</div>
+      <div class="subj-acc-bar-wrap"><div class="subj-acc-fill" style="width:${pct}%;background:${col};"></div></div>
+      <div class="subj-acc-pct" style="color:${col}">${pct}%</div>
+    </div>`;
+  }).join('');
+}
+function renderBadgesGrid(){
+  const el=document.getElementById('badgesGrid');if(!el)return;
+  el.innerHTML=BADGE_DEFS.map(b=>{
+    const earned=b.check();
+    return`<div class="badge-item${earned?' earned':''}">
+      <div class="badge-icon">${b.icon}</div>
+      <div class="badge-name">${b.name}</div>
+    </div>`;
+  }).join('');
+}
+function renderWeakTopics(){
+  const el=document.getElementById('weakList');if(!el)return;
+  const subStats={};
+  testHistory.forEach(h=>{
+    if(!h.details)return;
+    h.details.forEach(d=>{
+      if(!d.subject)return;
+      if(!subStats[d.subject])subStats[d.subject]={c:0,t:0};
+      subStats[d.subject].t++;
+      if(d.correct)subStats[d.subject].c++;
+    });
+  });
+  const weak=Object.keys(subStats).filter(s=>subStats[s].t>=3&&(subStats[s].c/subStats[s].t)<0.6)
+    .sort((a,b)=>(subStats[a].c/subStats[a].t)-(subStats[b].c/subStats[b].t));
+  if(!weak.length){el.innerHTML='<div style="color:var(--muted);font-size:0.78rem;text-align:center;padding:12px 0;">🎉 No weak topics! Keep it up!</div>';return;}
+  el.innerHTML=weak.map(s=>{
+    const st=subStats[s];const pct=Math.round(st.c/st.t*100);
+    const col=pct>=50?'var(--gold)':'var(--red)';
+    const qCount=questions.filter(q=>q.subject===s).length;
+    return`<div class="weak-item">
+      <div class="weak-head">
+        <div class="weak-label">${subChip(s)} ${s}</div>
+        <div class="weak-pct-badge" style="background:rgba(239,68,68,.15);color:${col};border:1px solid ${col}40;">${pct}%</div>
+      </div>
+      <div class="weak-bar-wrap"><div class="weak-bar-fill" style="width:${pct}%;background:${col};"></div></div>
+      <div class="weak-info">${st.c}/${st.t} correct • ${qCount} questions available</div>
+    </div>`;
+  }).join('');
+}
+function startWeakTest(){
+  const subStats={};
+  testHistory.forEach(h=>{
+    if(!h.details)return;
+    h.details.forEach(d=>{
+      if(!d.subject)return;
+      if(!subStats[d.subject])subStats[d.subject]={c:0,t:0};
+      subStats[d.subject].t++;
+      if(d.correct)subStats[d.subject].c++;
+    });
+  });
+  const weak=Object.keys(subStats).filter(s=>subStats[s].t>=3&&(subStats[s].c/subStats[s].t)<0.6);
+  if(!weak.length){toast('No weak topics found! Practice more first.','error');return;}
+  const pool=questions.filter(q=>weak.includes(q.subject));
+  if(!pool.length){toast('No questions for weak subjects!','error');return;}
+  hideProgressPage();
+  goPage('setup');
+  document.getElementById('tTitle').value='Weak Topics Practice';
+  document.getElementById('tNum').value=Math.min(pool.length,10);
+  toast(`🎯 ${weak.length} weak subject(s) — click Start Test!`,'success');
+}
+function renderHistoryList(){
+  const el=document.getElementById('histList');if(!el)return;
+  if(!testHistory.length){el.innerHTML='<div style="color:var(--muted);font-size:0.78rem;text-align:center;padding:12px 0;">No tests yet.</div>';return;}
+  el.innerHTML=testHistory.slice(0,20).map(h=>{
+    const col=h.pct>=75?'#10b981':h.pct>=50?'#f59e0b':'#ef4444';
+    return`<div class="hist-item">
+      <div class="hist-score" style="background:${col}">${h.pct}%</div>
+      <div class="hist-body">
+        <div class="hist-title">${h.title}</div>
+        <div class="hist-meta">${h.date} • ${h.total} questions${h.subject&&h.subject!=='all'?' • '+h.subject:''}</div>
+        <div class="hist-stats">
+          <span class="hist-stat c">✅ ${h.c}</span>
+          <span class="hist-stat w">❌ ${h.w}</span>
+          <span class="hist-stat s">⬜ ${h.s}</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+function clearHistory(){
+  if(!confirm('Clear all test history?'))return;
+  testHistory=[];
+  try{localStorage.removeItem('smt_history');}catch(e){}
+  renderProgressPage();
+  toast('History cleared','success');
 }
 
 /* ===== PDF.js VIEWER (Home + Exam) ===== */
@@ -1119,7 +1504,7 @@ function ensurePdfJs(cb) {
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     cb();
   };
-  s.onerror = () => toast('PDF.js load nahi hua — internet check karein','error');
+  s.onerror = () => toast('PDF.js failed to load — check your internet connection','error');
   document.head.appendChild(s);
 }
 
@@ -1181,7 +1566,7 @@ function initHomePdf(dataUrl, name) {
     pdfjsLib.getDocument({ data: arr }).promise.then(pdf => {
       homePdf.doc = pdf; homePdf.page = 1; homePdf.total = pdf.numPages; homePdf.rendering = false;
       renderPageOnCanvas(homePdf, 'homePdfCanvas', 'homePdfPageInfo', null);
-    }).catch(() => toast('PDF open nahi hua','error'));
+    }).catch(() => toast('Could not open PDF','error'));
   });
 }
 
@@ -1210,7 +1595,7 @@ function useHomePdfInTest() {
   document.getElementById('ansKeySetupBox').style.display = 'block';
   document.getElementById('pdfDropZone').style.display = 'none';
   goPage('setup');
-  toast('✅ PDF Test mein set ho gaya!','success');
+  toast('✅ PDF set for test!','success');
 }
 
 // Restore saved PDF on load
@@ -1237,7 +1622,7 @@ function loadExamPdf(dataUrl) {
       renderPageOnCanvas(examPdf, 'examPdfCanvas', 'examPdfPageInfo', null);
     }).catch(() => {
       viewer.style.display='none';
-      noFile.innerHTML = `<span style="font-size:2rem">📄</span><span style="margin:6px 0;font-size:0.82rem;">PDF load nahi hua</span><button onclick="openPdfBlob(testPdfData)" style="padding:9px 18px;background:linear-gradient(135deg,var(--acc),var(--acc2));color:white;border:none;border-radius:9px;font-weight:700;cursor:pointer;">📂 Alag Tab mein Kholein</button>`;
+      noFile.innerHTML = `<span style="font-size:2rem">📄</span><span style="margin:6px 0;font-size:0.82rem;">PDF could not be loaded</span><button onclick="openPdfBlob(testPdfData)" style="padding:9px 18px;background:linear-gradient(135deg,var(--acc),var(--acc2));color:white;border:none;border-radius:9px;font-weight:700;cursor:pointer;">📂 Open in New Tab</button>`;
       noFile.style.display='flex'; noFile.style.flexDirection='column'; noFile.style.alignItems='center'; noFile.style.gap='8px';
     });
   });
@@ -1255,25 +1640,25 @@ function sv(id,val){const el=document.getElementById(id);if(el)el.value=val;}
   <div class="pwa-banner-inner">
     <div class="pwa-banner-icon">🧠</div>
     <div class="pwa-banner-text">
-      <h3>App Install Karein!</h3>
-      <p>Home screen pe add karein — bilkul app jaisa</p>
+      <h3>Install the App!</h3>
+      <p>Add to home screen — works just like a native app</p>
     </div>
   </div>
   <div class="pwa-banner-btns">
     <button class="pwa-install-btn" id="pwaInstallBtn">📲 Install Karein</button>
-    <button class="pwa-dismiss-btn" onclick="dismissBanner()">Baad mein</button>
+    <button class="pwa-dismiss-btn" onclick="dismissBanner()">Later</button>
   </div>
 </div>
 
 <!-- iOS INSTALL GUIDE -->
 <div id="ios-guide">
-  <h3>📲 iPhone pe Install Karein</h3>
+  <h3>📲 Install on iPhone</h3>
   <div class="ios-steps">
-    <div class="ios-step"><span>⬆️</span>Share button dabayein</div>
-    <div class="ios-step"><span>➕</span>"Add to Home Screen" select karein</div>
-    <div class="ios-step"><span>✅</span>"Add" tap karein</div>
+    <div class="ios-step"><span>⬆️</span>Tap the Share button</div>
+    <div class="ios-step"><span>➕</span>Select "Add to Home Screen"</div>
+    <div class="ios-step"><span>✅</span>Tap "Add"</div>
   </div>
-  <button onclick="document.getElementById('ios-guide').classList.remove('show')">Samajh gaya ✓</button>
+  <button onclick="document.getElementById('ios-guide').classList.remove('show')">Got it ✓</button>
 </div>
 
 <script>
@@ -1303,7 +1688,7 @@ document.getElementById('pwaInstallBtn').addEventListener('click', async () => {
   const { outcome } = await deferredPrompt.userChoice;
   deferredPrompt = null;
   document.getElementById('pwa-banner').classList.remove('show');
-  if(outcome === 'accepted') toast('✅ App install ho rahi hai!','success');
+  if(outcome === 'accepted') toast('✅ App is being installed!','success');
 });
 
 function dismissBanner(){
