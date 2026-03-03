@@ -255,25 +255,57 @@ input,textarea,select,button{font-family:inherit;}
 
 .exam-qcard{
   background:var(--s1);border:1px solid var(--border);
-  border-radius:12px;padding:16px;margin:12px 16px;
+  border-radius:14px;margin:12px 16px;
+  overflow:hidden;
 }
-.eq-head{display:flex;align-items:center;gap:7px;margin-bottom:10px;}
+.eq-head{
+  display:flex;align-items:center;gap:7px;
+  padding:10px 14px 0;
+}
 .eq-num{
   background:linear-gradient(135deg,var(--acc),var(--acc2));color:white;
   border-radius:7px;padding:3px 10px;font-weight:800;font-size:0.78rem;
 }
 .eq-subj{font-size:0.72rem;color:var(--gold);font-weight:700;}
-.eq-text{font-size:0.95rem;font-weight:600;line-height:1.6;margin-bottom:12px;}
-.eq-img{max-width:100%;border-radius:8px;border:1px solid var(--border);margin-bottom:12px;cursor:pointer;}
-.eq-opts{display:flex;flex-direction:column;gap:8px;}
-.eq-opt{
-  display:flex;align-items:center;gap:10px;
-  padding:12px 14px;background:var(--s2);
-  border:2px solid var(--border);border-radius:10px;
-  cursor:pointer;transition:all .17s;font-size:0.9rem;
-  -webkit-user-select:none;
+
+/* Question text box — fixed min height so all cards look same */
+.eq-textbox{
+  min-height:80px;
+  display:flex;align-items:center;justify-content:center;
+  padding:12px 16px;
+  background:rgba(79,127,255,.05);
+  border-top:1px solid var(--border);
+  border-bottom:1px solid var(--border);
+  margin:10px 0 0;
+  text-align:center;
 }
-.eq-opt:active{transform:scale(.98);}
+.eq-text{
+  font-size:0.95rem;font-weight:600;line-height:1.6;
+  text-align:center;width:100%;
+}
+.eq-img{
+  max-width:100%;max-height:160px;object-fit:contain;
+  border-radius:8px;border:1px solid var(--border);
+  margin:10px 16px 0;display:block;cursor:pointer;
+  width:calc(100% - 32px);
+}
+
+/* 2x2 symmetrical grid options */
+.eq-opts{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+  padding:10px 14px 14px;
+}
+.eq-opt{
+  display:flex;align-items:center;gap:8px;
+  padding:11px 12px;background:var(--s2);
+  border:2px solid var(--border);border-radius:10px;
+  cursor:pointer;transition:all .17s;font-size:0.86rem;
+  -webkit-user-select:none;
+  min-height:48px;
+}
+.eq-opt:active{transform:scale(.97);}
 .eq-opt.sel{border-color:var(--acc);background:rgba(79,127,255,.14);}
 .eq-opt.correct{border-color:var(--green)!important;background:rgba(16,185,129,.15)!important;}
 .eq-opt.wrong{border-color:var(--red)!important;background:rgba(239,68,68,.12)!important;}
@@ -286,6 +318,7 @@ input,textarea,select,button{font-family:inherit;}
 .eq-opt.sel .okey{background:var(--acc);border-color:var(--acc);color:white;}
 .eq-opt.correct .okey{background:var(--green);border-color:var(--green);color:white;}
 .eq-opt.wrong .okey{background:var(--red);border-color:var(--red);color:white;}
+.eq-opt-text{flex:1;line-height:1.3;word-break:break-word;}
 .exam-submit-btn{margin:16px;display:block;width:calc(100% - 32px);}
 
 /* ===== RESULT ===== */
@@ -593,6 +626,133 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('./sw.js').catch(() => {});
 }
 
+/* ====== BULK EXTRACT ====== */
+async function bulkExtract() {
+  const text = document.getElementById('bulkText').value.trim();
+  if (!text) { toast('Pehle questions paste karo!', 'error'); return; }
+
+  const subject = document.getElementById('bulkSubject').value.trim();
+  const btn = document.getElementById('bulkBtn');
+  const statusEl = document.getElementById('bulkStatus');
+
+  btn.disabled = true;
+  btn.textContent = '⏳ AI extract kar raha hai...';
+  statusEl.style.display = 'flex';
+  statusEl.className = 'status-box';
+  statusEl.innerHTML = '<span class="s-dot"></span><span>AI questions dhundh raha hai...</span>';
+
+  const prompt = `Extract ALL multiple choice questions from this text.
+Return ONLY a valid JSON array, no markdown, no explanation.
+Format:
+[{"q":"question text","A":"option a","B":"option b","C":"option c","D":"option d","ans":"A"}]
+
+Rules:
+- ans must be A, B, C, or D (uppercase)
+- If answer uses (a)(b)(c)(d) or 1234, convert to A B C D
+- Extract every single question
+- Keep question text clean
+
+Text:
+${text}`;
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 8000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    const data = await resp.json();
+    if (data.error) throw new Error(data.error.message);
+
+    const raw = data.content.map(c => c.text || '').join('');
+    const cleaned = raw.replace(/```json|```/g, '').trim();
+    const parsed = JSON.parse(cleaned);
+
+    if (!Array.isArray(parsed) || !parsed.length) throw new Error('Koi question nahi mila!');
+
+    statusEl.className = 'status-box ok';
+    statusEl.innerHTML = `<span class="s-dot"></span><span>✅ ${parsed.length} questions mile! Check karo aur save karo.</span>`;
+
+    showBulkPreview(parsed, subject);
+  } catch(err) {
+    statusEl.className = 'status-box err';
+    statusEl.innerHTML = `<span class="s-dot"></span><span>❌ ${err.message}</span>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '✨ AI se Extract Karein';
+  }
+}
+
+function showBulkPreview(list, subject) {
+  const area = document.getElementById('bulkPreview');
+  area.style.display = 'block';
+
+  area.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
+      <span style="font-weight:700;font-size:0.88rem;color:var(--acc);">📋 ${list.length} Questions — Preview</span>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-green btn-sm btn-inline" onclick="saveAllBulk()">💾 Sab Save Karein (${list.length})</button>
+        <button class="btn btn-ghost btn-sm btn-inline" onclick="document.getElementById('bulkPreview').style.display='none'">✕</button>
+      </div>
+    </div>
+    <div id="bulkQList">
+      ${list.map((q, i) => `
+        <div style="background:var(--s2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:8px;">
+          <div style="font-weight:700;font-size:0.78rem;color:var(--acc);margin-bottom:6px;">Q.${i+1}</div>
+          <div style="font-size:0.85rem;font-weight:600;margin-bottom:8px;">${q.q}</div>
+          <div style="display:flex;flex-wrap:wrap;gap:5px;">
+            ${['A','B','C','D'].map(opt => `
+              <span style="padding:3px 10px;border-radius:7px;font-size:0.75rem;font-weight:600;
+                background:${q.ans===opt?'rgba(16,185,129,.2)':'var(--s3)'};
+                border:1px solid ${q.ans===opt?'var(--green)':'var(--border)'};
+                color:${q.ans===opt?'var(--green)':'var(--muted)'};">
+                ${opt}: ${q[opt]||'-'} ${q.ans===opt?'✓':''}
+              </span>
+            `).join('')}
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+
+  // Store parsed data for saving
+  window._bulkParsed = list;
+  window._bulkSubject = subject;
+}
+
+function saveAllBulk() {
+  const list = window._bulkParsed;
+  const subject = window._bulkSubject || '';
+  if (!list || !list.length) return;
+
+  let count = 0;
+  list.forEach((q, i) => {
+    if (!q.q || !q.A || !q.B || !q.C || !q.D) return;
+    questions.push({
+      id: Date.now() + i,
+      qText: q.q,
+      options: { A: q.A, B: q.B, C: q.C, D: q.D },
+      correct: q.ans || 'A',
+      subject: subject,
+      explanation: '',
+      image: null
+    });
+    count++;
+  });
+
+  save();
+  toast(`✅ ${count} questions save ho gaye!`, 'success');
+  document.getElementById('bulkText').value = '';
+  document.getElementById('bulkPreview').style.display = 'none';
+  document.getElementById('bulkStatus').style.display = 'none';
+  document.getElementById('bulkSubject').value = '';
+  window._bulkParsed = null;
+}
+
 /* ====== SAVE / REFRESH ====== */
 function save() {
   localStorage.setItem('smtpwa', JSON.stringify(questions));
@@ -840,12 +1000,14 @@ function renderExamQ(){
         ${q.subject?`<div class="eq-subj">${q.subject}</div>`:''}
       </div>
       ${q.image?`<img src="${q.image}" class="eq-img" onclick="openModal('${q.image}')" />`:''}
-      <div class="eq-text">${q.qText||''}</div>
+      <div class="eq-textbox">
+        <div class="eq-text">${q.qText||''}</div>
+      </div>
       <div class="eq-opts">
         ${['A','B','C','D'].map(opt=>`
           <div class="eq-opt" id="eop${i}_${opt}" onclick="pick(${i},'${opt}')">
             <div class="okey">${opt}</div>
-            <span>${q.options[opt]||''}</span>
+            <span class="eq-opt-text">${q.options[opt]||''}</span>
           </div>
         `).join('')}
       </div>
