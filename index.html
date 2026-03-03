@@ -417,6 +417,22 @@ input,textarea,select,button{font-family:inherit;}
   <div class="page active" id="page-add">
     <div style="height:14px;"></div>
 
+    <!-- BULK PASTE -->
+    <div class="card" style="border-color:rgba(79,127,255,.5);background:linear-gradient(135deg,rgba(79,127,255,.08),rgba(124,58,237,.08));">
+      <div class="card-head" style="color:var(--acc);">⚡ Bulk Paste — Ek saath 50 Questions</div>
+      <div class="fg">
+        <label>Subject</label>
+        <input type="text" id="bulkSubject" placeholder="e.g. Math, GK, Reasoning..." />
+      </div>
+      <div class="fg">
+        <label>Questions paste karein *</label>
+        <textarea id="bulkText" style="min-height:130px;font-size:0.82rem;line-height:1.6;" placeholder="Koi bhi format mein paste karo:&#10;&#10;1. Capital of India?&#10;A) Mumbai  B) Delhi  C) Chennai  D) Kolkata&#10;Ans: B&#10;&#10;2. 2+2=?&#10;(a)3  (b)4  (c)5  (d)6&#10;Answer: b"></textarea>
+      </div>
+      <div id="bulkStatus" style="display:none;"></div>
+      <div id="bulkPreview" style="display:none;margin-top:12px;"></div>
+      <button class="btn btn-primary" onclick="bulkExtract()" id="bulkBtn">✨ AI se Extract Karein</button>
+    </div>
+
     <!-- Image Upload -->
     <div class="card">
       <div class="card-head">🖼️ Image se Question Add Karein</div>
