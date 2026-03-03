@@ -669,22 +669,13 @@ input,textarea,select,button{font-family:inherit;}
       </div>
       <div id="imgStep2" style="display:none;">
         <div class="img-preview" id="imgPreviewBox"></div>
-        <div style="height:14px;"></div>
-        <div class="fg"><label>Question *</label><textarea id="img_q" placeholder="Type question text..."></textarea></div>
-        <div class="opts-grid">
-          <div class="opt-row"><div class="opt-badge" style="background:linear-gradient(135deg,#4f7fff,#7c3aed)">A</div><input type="text" id="img_a" placeholder="Option A" style="width:100%;padding:9px 10px;background:var(--s2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.86rem;"></div>
-          <div class="opt-row"><div class="opt-badge" style="background:linear-gradient(135deg,#10b981,#059669)">B</div><input type="text" id="img_b" placeholder="Option B" style="width:100%;padding:9px 10px;background:var(--s2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.86rem;"></div>
-          <div class="opt-row"><div class="opt-badge" style="background:linear-gradient(135deg,#f59e0b,#d97706)">C</div><input type="text" id="img_c" placeholder="Option C" style="width:100%;padding:9px 10px;background:var(--s2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.86rem;"></div>
-          <div class="opt-row"><div class="opt-badge" style="background:linear-gradient(135deg,#ef4444,#dc2626)">D</div><input type="text" id="img_d" placeholder="Option D" style="width:100%;padding:9px 10px;background:var(--s2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.86rem;"></div>
-        </div>
-        <div style="margin-top:10px;">
+        <div style="margin-top:12px;">
           <div style="font-size:0.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">📎 Explanation Media</div>
           <div class="exp-media-row">
             <label class="exp-media-btn"><input type="file" accept="image/*" multiple="" onchange="addExpMedia(event,'img')">🖼️ Photos</label>
             <label class="exp-media-btn"><input type="file" accept="application/pdf" multiple="" onchange="addExpMedia(event,'img')">📄 PDFs</label>
           </div>
           <div class="exp-thumb-row" id="imgExpThumbs"></div>
-        </div>
         </div>
       </div>
     </div>
@@ -999,9 +990,7 @@ function onImgFilePicked(e){
   r.readAsDataURL(f);
 }
 function saveImgQ(withImg){
-  const q=v('img_q'),A=v('img_a'),B=v('img_b'),C=v('img_c'),D=v('img_d');
-  if(!q||!A||!B||!C||!D){toast('Please fill all fields!','error');return;}
-  pendingQ={id:Date.now(),qText:q,options:{A,B,C,D},correct:'',subject:'',explanation:'',expMedia:[...imgExpMedia],image:withImg?imgPickedData:null};
+  pendingQ={id:Date.now(),qText:'',options:{A:'A',B:'B',C:'C',D:'D'},correct:'',subject:'',explanation:'',expMedia:[...imgExpMedia],image:withImg?imgPickedData:null};
   openAnsKeyPopup(()=>{
     openCatPopup(()=>{
       questions.push(pendingQ);save();toast('✅ Saved!','success');
@@ -1010,8 +999,7 @@ function saveImgQ(withImg){
   });
 }
 function resetImgForm(){
-  ['img_q','img_a','img_b','img_c','img_d'].forEach(id=>sv(id,''));
-  sv('img_corr','A');imgExpMedia=[];renderExpThumbs('img','imgExpThumbs');
+  imgExpMedia=[];renderExpThumbs('img','imgExpThumbs');
 }
 function resetImgFormFull(){
   imgPickedData=null;imgExpMedia=[];
@@ -1130,11 +1118,12 @@ function openAnsKeyPopup(onDone){
 }
 
 function renderAnsKeyBtns(){
-  const opts = pendingQ ? pendingQ.options : {A:'',B:'',C:'',D:''};
+  const opts = pendingQ ? pendingQ.options : {A:'A',B:'B',C:'C',D:'D'};
+  const hasText = pendingQ && Object.values(pendingQ.options).some(v=>v&&v.length>1);
   document.getElementById('ansKeyBtns').innerHTML = ['A','B','C','D'].map(k=>`
     <button class="ansk-btn${selectedAns===k?' sel-'+k:''}" onclick="selectAns('${k}')">
       <span class="ansk-letter">${k}</span>
-      <span class="ansk-text">${opts[k]||''}</span>
+      ${hasText?`<span class="ansk-text">${opts[k]||''}</span>`:''}
     </button>
   `).join('');
 }
