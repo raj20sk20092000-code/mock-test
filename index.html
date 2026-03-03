@@ -423,6 +423,18 @@ input,textarea,select,button{font-family:inherit;}
         <div style="border-radius:10px;overflow:hidden;border:1px solid var(--border);background:#fff;line-height:0;">
           <canvas id="homePdfCanvas" style="display:block;width:100%;"></canvas>
         </div>
+        <!-- Answer Key -->
+        <div style="margin-top:12px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+            <span style="font-size:0.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;">🗝️ Answer Key</span>
+            <div style="display:flex;gap:6px;align-items:center;">
+              <span style="font-size:0.72rem;color:var(--muted);">Q</span>
+              <input type="number" id="homeAnsKeyQNum" min="1" value="1" style="width:52px;padding:5px 8px;background:var(--s2);border:1px solid var(--border);border-radius:7px;color:var(--text);font-size:0.85rem;font-weight:700;text-align:center;">
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;" id="homeAnsKeyBtns"></div>
+          <div style="font-size:0.7rem;color:var(--muted);margin-top:8px;text-align:center;" id="homeAnsKeySummary"></div>
+        </div>
         <!-- Use in test button -->
         <button onclick="useHomePdfInTest()" style="width:100%;margin-top:10px;padding:10px;background:rgba(79,127,255,.15);border:1px solid var(--acc);color:var(--acc);border-radius:9px;font-size:0.82rem;font-weight:700;cursor:pointer;">🎯 Use This PDF in Test</button>
       </div>
@@ -460,38 +472,39 @@ input,textarea,select,button{font-family:inherit;}
   <div class="page" id="page-setup">
     <div style="height:14px;"></div>
 
-    <!-- PDF Upload for Test -->
-    <div class="card">
-      <div class="card-head">📄 PDF for Test (optional)</div>
-      <p style="font-size:0.78rem;color:var(--muted);margin-bottom:12px;">Upload a PDF — it will appear on top while questions are shown below during the test.</p>
-      <div style="display:flex;align-items:center;gap:10px;">
-        <input type="file" id="testPdfIn" accept="application/pdf" style="display:none" onchange="onTestPdfPicked(event)">
-        <button id="pdfDropZone" onclick="document.getElementById('testPdfIn').click()" style="display:flex;align-items:center;gap:8px;padding:11px 16px;background:var(--s2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:0.85rem;font-weight:700;cursor:pointer;">
-          <span style="font-size:1.4rem;">📄</span> Select PDF
-        </button>
+    <!-- CARD 1: BANK TEST -->
+    <div class="card" style="border:1px solid rgba(79,127,255,.35);">
+      <div class="card-head" style="color:var(--acc);">📝 Question Bank Test</div>
+      <div class="stat-row" id="setupStats">
+        <div class="stat-box"><div class="stat-val">0</div><div class="stat-lbl">Questions</div></div>
+        <div class="stat-box"><div class="stat-val">0</div><div class="stat-lbl">Subjects</div></div>
       </div>
-      <div id="testPdfChip" style="display:none;margin-top:10px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.3);border-radius:9px;padding:10px 13px;display:none;align-items:center;gap:10px;">
-        <span style="font-size:1.2rem;">📄</span>
-        <span style="flex:1;font-size:0.82rem;font-weight:600;color:var(--red);" id="testPdfName">file.pdf</span>
-        <span style="cursor:pointer;color:var(--muted);font-size:1rem;" onclick="removeTestPdf()">✕</span>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="stat-row" id="setupStats"><div class="stat-box"><div class="stat-val">0</div><div class="stat-lbl">Questions</div></div><div class="stat-box"><div class="stat-val">0</div><div class="stat-lbl">Subjects</div></div></div>
       <div class="fg"><label>Test Title</label><input type="text" id="tTitle" value="Mock Test"></div>
       <div class="fg"><label>Total Questions</label><input type="number" id="tNum" value="10" min="1"></div>
       <div class="fg"><label>Time (Minutes)</label><input type="number" id="tTime" value="30" min="1"></div>
-      <div class="fg"><label>Subject Filter</label><select id="tSub"><option value="all">All Subjects</option></select></div>
-
-      <!-- Answer Key for PDF test -->
-      <div id="ansKeySetupBox" style="display:none;margin-bottom:12px;">
-        <button class="btn btn-gold" onclick="openSetupAnsKey()">🗝️ Set Answer Key (optional)</button>
-        <div style="font-size:0.7rem;color:var(--muted);margin-top:5px;">Manually set answers for a PDF-based test</div>
+      <div class="fg">
+        <label>Subject Filter</label>
+        <div id="subFilterWrap" style="display:flex;flex-wrap:wrap;gap:7px;padding:10px;background:var(--s2);border:1px solid var(--border);border-radius:9px;min-height:44px;"></div>
       </div>
-
-      <button class="btn btn-primary" onclick="startExam()">🚀 Start Test</button>
+      <button class="btn btn-primary" onclick="startBankTest()">🚀 Start Test</button>
     </div>
+
+    <!-- DIVIDER -->
+    <div style="display:flex;align-items:center;gap:10px;margin:6px 0;">
+      <div style="flex:1;height:1px;background:var(--border);"></div>
+      <span style="font-size:0.72rem;color:var(--muted);font-weight:700;">OR</span>
+      <div style="flex:1;height:1px;background:var(--border);"></div>
+    </div>
+
+    <!-- CARD 2: PDF TEST -->
+    <div class="card" style="border:1px solid rgba(239,68,68,.35);">
+      <div class="card-head" style="color:var(--red);">📄 PDF Test</div>
+      <div id="pdfTestStatus"></div>
+      <div class="fg"><label>Total Questions</label><input type="number" id="tPdfNum" value="10" min="1"></div>
+      <div class="fg"><label>Time (Minutes)</label><input type="number" id="tPdfTime" value="30" min="1"></div>
+      <button class="btn btn-red" onclick="startPdfTest()">🚀 Start PDF Test</button>
+    </div>
+
     <div style="height:20px;"></div>
   </div>
 
@@ -680,10 +693,7 @@ input,textarea,select,button{font-family:inherit;}
       </div>
     </div>
     <div class="popup-footer" id="imgPopupFooter" style="display:none;">
-      <div class="btn-row">
-        <button class="btn btn-green" onclick="saveImgQ(true)">💾 Save with Image</button>
-        <button class="btn btn-ghost" onclick="saveImgQ(false)">💾 Text Only</button>
-      </div>
+      <button class="btn btn-primary" onclick="saveImgQ(true)">💾 Save</button>
       <button class="btn btn-ghost" style="margin-top:8px;" onclick="resetImgForm()">➕ Add Another</button>
     </div>
   </div>
@@ -748,6 +758,44 @@ input,textarea,select,button{font-family:inherit;}
   </div>
 </div>
 
+<!-- POPUP: PDF QUESTION COUNT -->
+<div class="popup-overlay" id="pdfQCountPopup">
+  <div class="popup-sheet">
+    <div class="popup-handle"></div>
+    <div class="popup-header">
+      <span style="font-size:1.2rem">📄</span>
+      <span class="popup-title">Start PDF Test</span>
+    </div>
+    <div class="popup-body">
+      <div id="pdfQCountWarn" style="font-size:0.78rem;margin-bottom:14px;padding:10px;background:var(--s2);border-radius:9px;text-align:center;"></div>
+      <label style="font-size:0.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:8px;">Total Questions</label>
+      <input type="number" id="pdfQCountInput" value="10" min="1" style="width:100%;padding:14px;background:var(--s2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:1.2rem;font-weight:700;text-align:center;">
+    </div>
+    <div class="popup-footer">
+      <button class="btn btn-primary" onclick="confirmPdfQCount()">▶ Start Test</button>
+    </div>
+  </div>
+</div>
+
+<!-- POPUP: PDF POST-TEST SAVE -->
+<div class="popup-overlay" id="pdfSavePopup">
+  <div class="popup-sheet" style="max-height:95vh;">
+    <div class="popup-handle"></div>
+    <div class="popup-header">
+      <span style="font-size:1.2rem">💾</span>
+      <span class="popup-title">Save Questions</span>
+      <span style="font-size:0.75rem;color:var(--muted);" id="pdfSaveProgress">Q 1 of ?</span>
+    </div>
+    <div class="popup-body" id="pdfSaveBody">
+      <!-- Filled dynamically per question -->
+    </div>
+    <div class="popup-footer">
+      <button class="btn btn-primary" onclick="pdfSaveNext()">Next ➡️</button>
+      <button class="btn btn-ghost" style="margin-top:8px;" onclick="pdfSaveSkip()">Skip this question</button>
+    </div>
+  </div>
+</div>
+
 <!-- POPUP: ANSWER KEY -->
 <div class="popup-overlay" id="ansKeyPopup">
   <div class="popup-sheet">
@@ -757,7 +805,7 @@ input,textarea,select,button{font-family:inherit;}
       <span class="popup-title">Which is Correct?</span>
     </div>
     <div class="popup-body">
-      <div style="font-size:0.78rem;color:var(--muted);margin-bottom:4px;">Tap the correct answer</div>
+      <div style="font-size:0.78rem;color:var(--muted);margin-bottom:4px;">Tap one or more correct answers</div>
       <div class="ansk-opts" id="ansKeyBtns"></div>
       <div class="fg" style="margin-top:14px;">
         <label>Explanation (optional)</label>
@@ -815,6 +863,7 @@ let pdfQCount = 10;
 let isPdfOnlyTest = false;
 let testHistory = [], streakData = {};
 let qTimers = {}, qTimerStart = 0, currentVisibleQ = 0, qTimerInterval = null;
+let selectedSubjects = [];
 
 /* ===== SUBJECT COLOR MAP ===== */
 const SUB_COLORS=['#4f7fff','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec4899','#06b6d4','#84cc16','#f97316','#6366f1'];
@@ -883,6 +932,7 @@ function goPage(p){
   document.getElementById('bottomNav').style.display='flex';
   document.getElementById('scrollBody').scrollTop=0;
   if(p==='bank') renderBank();
+  if(p==='setup') updatePdfTestStatus();
 }
 function openPopup(id){document.getElementById(id).classList.add('open');}
 function closePopup(id){document.getElementById(id).classList.remove('open');}
@@ -895,26 +945,29 @@ function onTestPdfPicked(e){
   const f=e.target.files[0];if(!f)return;
   const r=new FileReader();
   r.onload=ev=>{
-    testPdfData=ev.target.result; // full data URL
-    document.getElementById('testPdfName').textContent=f.name;
+    testPdfData=ev.target.result;
     const chip=document.getElementById('testPdfChip');
-    chip.style.display='flex';
-    document.getElementById('ansKeySetupBox').style.display='block';
-    document.getElementById('pdfDropZone').style.display='none';
+    const nameEl=document.getElementById('testPdfName');
+    const dropZone=document.getElementById('pdfDropZone');
+    if(nameEl) nameEl.textContent=f.name;
+    if(chip){chip.style.display='flex';}
+    if(dropZone) dropZone.style.display='none';
   };
   r.readAsDataURL(f);
 }
 function removeTestPdf(){
   testPdfData=null; pdfAnsKey={};
-  document.getElementById('testPdfChip').style.display='none';
-  document.getElementById('ansKeySetupBox').style.display='none';
-  document.getElementById('pdfDropZone').style.display='block';
-  document.getElementById('testPdfIn').value='';
+  const chip=document.getElementById('testPdfChip');
+  const dropZone=document.getElementById('pdfDropZone');
+  if(chip) chip.style.display='none';
+  if(dropZone) dropZone.style.display='block';
+  const inp=document.getElementById('testPdfIn');
+  if(inp) inp.value='';
 }
 
 /* ===== SETUP ANS KEY ===== */
 function openSetupAnsKey(){
-  const n=parseInt(document.getElementById('tNum').value)||10;
+  const n=parseInt(document.getElementById('tPdfNum').value)||10;
   pdfQCount=n;
   const g=document.getElementById('setupAnsKeyGrid');
   g.innerHTML=Array.from({length:n},(_,i)=>`
@@ -1099,19 +1152,35 @@ function updateSetupStats(){
   if(el)el.innerHTML=`<div class="stat-box"><div class="stat-val">${questions.length}</div><div class="stat-lbl">Questions</div></div><div class="stat-box"><div class="stat-val">${subs.length}</div><div class="stat-lbl">Subjects</div></div>`;
 }
 function updateSubjectSel(){
-  const sel=document.getElementById('tSub');if(!sel)return;
   const subs=[...new Set(questions.map(q=>q.subject).filter(Boolean))];
-  sel.innerHTML='<option value="all">All Subjects</option>';
-  subs.forEach(s=>sel.innerHTML+=`<option value="${s}">${s}</option>`);
+  const wrap=document.getElementById('subFilterWrap');if(!wrap)return;
+  // remove any subjects no longer in bank
+  selectedSubjects=selectedSubjects.filter(s=>subs.includes(s));
+  wrap.innerHTML=subs.map(s=>{
+    const sel=selectedSubjects.includes(s);
+    const col=getSubjectColor(s);
+    return`<span onclick="toggleSubFilter('${s}')" style="padding:6px 13px;border-radius:20px;font-size:0.78rem;font-weight:700;cursor:pointer;border:2px solid ${sel?col:'var(--border)'};background:${sel?col+'30':'var(--s3)'};color:${sel?col:'var(--muted)'};transition:all .15s;">${sel?'✓ ':''} ${s}</span>`;
+  }).join('')
+  +`<span onclick="toggleSubFilter('all')" style="padding:6px 13px;border-radius:20px;font-size:0.78rem;font-weight:700;cursor:pointer;border:2px solid ${!selectedSubjects.length?'var(--acc)':'var(--border)'};background:${!selectedSubjects.length?'rgba(79,127,255,.2)':'var(--s3)'};color:${!selectedSubjects.length?'var(--acc)':'var(--muted)'};transition:all .15s;">${!selectedSubjects.length?'✓ All':'All'}</span>`;
+}
+
+function toggleSubFilter(s){
+  if(s==='all'){selectedSubjects=[];}
+  else{
+    if(selectedSubjects.includes(s)) selectedSubjects=selectedSubjects.filter(x=>x!==s);
+    else selectedSubjects.push(s);
+  }
+  updateSubjectSel();
+  updateSetupStats();
 }
 
 /* ===== ANSWER KEY POPUP ===== */
 let ansKeyCallback = null;
-let selectedAns = '';
+let selectedAns = [];
 
 function openAnsKeyPopup(onDone){
   ansKeyCallback = onDone;
-  selectedAns = '';
+  selectedAns = [];
   document.getElementById('pendingExp').value = '';
   renderAnsKeyBtns();
   openPopup('ansKeyPopup');
@@ -1121,22 +1190,23 @@ function renderAnsKeyBtns(){
   const opts = pendingQ ? pendingQ.options : {A:'A',B:'B',C:'C',D:'D'};
   const hasText = pendingQ && Object.values(pendingQ.options).some(v=>v&&v.length>1);
   document.getElementById('ansKeyBtns').innerHTML = ['A','B','C','D'].map(k=>`
-    <button class="ansk-btn${selectedAns===k?' sel-'+k:''}" onclick="selectAns('${k}')">
-      <span class="ansk-letter">${k}</span>
+    <button class="ansk-btn${selectedAns.includes(k)?' sel-'+k:''}" onclick="selectAns('${k}')">
+      <span class="ansk-letter">${selectedAns.includes(k)?'✓ '+k:k}</span>
       ${hasText?`<span class="ansk-text">${opts[k]||''}</span>`:''}
     </button>
   `).join('');
 }
 
 function selectAns(opt){
-  selectedAns = opt;
+  if(selectedAns.includes(opt)) selectedAns=selectedAns.filter(x=>x!==opt);
+  else selectedAns.push(opt);
   renderAnsKeyBtns();
 }
 
 function ansKeyDone(){
-  if(!selectedAns){toast('Please select the correct answer','error');return;}
+  if(!selectedAns.length){toast('Please select the correct answer','error');return;}
   if(pendingQ){
-    pendingQ.correct = selectedAns;
+    pendingQ.correct = selectedAns.sort().join(',');
     pendingQ.explanation = document.getElementById('pendingExp').value.trim();
   }
   closePopup('ansKeyPopup');
@@ -1221,26 +1291,55 @@ function importQ(){
 /* ===== EXAM ===== */
 function shuffle(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;}
 
-function startExam(){
-  const sub=document.getElementById('tSub').value;
-  const num=parseInt(document.getElementById('tNum').value)||10;
-  const mins=parseInt(document.getElementById('tTime').value)||30;
+function startBankTest(){
+  isPdfOnlyTest = false;
+  testPdfData = null;
+  startExam();
+}
 
-  // PDF-only mode: no questions in bank needed if PDF uploaded with answer key
-  if(testPdfData && questions.length===0){
-    // Create dummy questions from answer key
-    if(Object.keys(pdfAnsKey).length===0){
-      toast('Add questions to the bank or set an Answer Key!','error');return;
-    }
-    isPdfOnlyTest=true;
-    testQ=Array.from({length:Math.min(num,Object.keys(pdfAnsKey).length)},(_,i)=>({
-      id:i, qText:`Question ${i+1}`, options:{A:'A',B:'B',C:'C',D:'D'},
-      correct:pdfAnsKey[i]||'A', subject:'', explanation:'', expMedia:[], image:null,
-      pdfOnly:true
-    }));
+function updatePdfTestStatus(){
+  const el = document.getElementById('pdfTestStatus');
+  if(!el) return;
+  if(homePdf.data && homePdf.name){
+    el.innerHTML = `<div style="display:flex;align-items:center;gap:10px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.3);border-radius:9px;padding:10px 13px;margin-bottom:12px;">
+      <span style="font-size:1.3rem;">📄</span>
+      <span style="flex:1;font-size:0.82rem;font-weight:600;color:var(--red);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${homePdf.name}</span>
+      <span style="font-size:0.68rem;color:var(--green);font-weight:700;">✓ Ready</span>
+    </div>`;
+    const box=document.getElementById('ansKeySetupBox');
+    if(box) box.style.display = 'block';
+  } else {
+    el.innerHTML = `<div style="font-size:0.78rem;color:var(--muted);margin-bottom:12px;padding:10px;background:var(--s2);border-radius:9px;text-align:center;">
+      📄 No PDF loaded — go to <b>Add</b> page and upload a PDF first
+    </div>`;
+    const box=document.getElementById('ansKeySetupBox');
+    if(box) box.style.display = 'none';
+  }
+}
+
+function startPdfTest(){
+  if(!homePdf.data){toast('No PDF loaded — upload one on the Add page first!','error');return;}
+  testPdfData = homePdf.data;
+  isPdfOnlyTest = true;
+  pdfAnsKey = {};
+  startExam();
+}
+
+function startExam(){
+  const num = isPdfOnlyTest
+    ? parseInt(document.getElementById('tPdfNum').value)||10
+    : parseInt(document.getElementById('tNum').value)||10;
+  const mins = isPdfOnlyTest
+    ? parseInt(document.getElementById('tPdfTime').value)||30
+    : parseInt(document.getElementById('tTime').value)||30;
+
+  // PDF-only mode
+  if(isPdfOnlyTest){
+    openPdfQCountPopup();
+    return;
   } else {
     isPdfOnlyTest=false;
-    let pool=sub==='all'?questions:questions.filter(q=>q.subject===sub);
+    let pool=selectedSubjects.length===0?questions:questions.filter(q=>selectedSubjects.includes(q.subject));
     if(!pool.length){toast('Please add questions first!','error');return;}
     testQ=shuffle(pool).slice(0,Math.min(num,pool.length)).map(q=>{
       const keys=shuffle(['A','B','C','D']);const opts={};let nc='A';
@@ -1263,6 +1362,10 @@ function startExam(){
 
   // Load PDF using PDF.js
   loadExamPdf(testPdfData);
+  // Hide PDF section if no PDF uploaded
+  const hasPdf = !!testPdfData;
+  document.getElementById('pdfHalf').style.display = hasPdf ? '' : 'none';
+  document.getElementById('resizeHandle').style.display = hasPdf ? '' : 'none';
 
   renderExamQ();renderDots();
   if(timerInt)clearInterval(timerInt);
@@ -1321,6 +1424,7 @@ function renderExamQ(){
         <div class="eq-head">
           <div class="eq-num">Q.${i+1}</div>
           ${q.subject?`<div class="eq-subj" style="color:${getSubjectColor(q.subject)}">${q.subject}</div>`:''}
+          ${q.correct&&q.correct.includes(',')?`<div style="font-size:0.65rem;background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.3);color:var(--gold);border-radius:6px;padding:2px 7px;font-weight:700;">Multi ✓</div>`:''}
           <div class="qtimer-badge" id="qt${i}">0:00</div>
         </div>
         ${q.image?`<img src="${q.image}" class="eq-img" onclick="openImgViewer('${q.image}')" />`:''}
@@ -1331,8 +1435,24 @@ function renderExamQ(){
 }
 
 function pick(qi,opt){
-  answers[qi]=opt;
-  ['A','B','C','D'].forEach(o=>{const el=document.getElementById(`eop${qi}_${o}`);if(el)el.classList.toggle('sel',o===opt);});
+  const q = testQ[qi];
+  const isMulti = q.correct && q.correct.includes(',');
+  if(isMulti){
+    // toggle selection
+    let cur = answers[qi] ? answers[qi].split(',') : [];
+    if(cur.includes(opt)) cur = cur.filter(x=>x!==opt);
+    else cur.push(opt);
+    answers[qi] = cur.sort().join(',') || undefined;
+    if(!answers[qi]) delete answers[qi];
+  } else {
+    answers[qi] = opt;
+  }
+  ['A','B','C','D'].forEach(o=>{
+    const el=document.getElementById(`eop${qi}_${o}`);
+    if(!el)return;
+    const sel = answers[qi] ? answers[qi].split(',').includes(o) : false;
+    el.classList.toggle('sel', sel);
+  });
   renderDots();
   const done=Object.keys(answers).length;
   document.getElementById('progFill').style.width=(done/testQ.length*100)+'%';
@@ -1354,7 +1474,12 @@ function submitExam(ask){
     qTimers[currentVisibleQ]=(qTimers[currentVisibleQ]||0)+Math.floor((Date.now()-qTimerStart)/1000);
   }
   let c=0,w=0,s=0;
-  testQ.forEach((q,i)=>{const a=answers[i];if(!a)s++;else if(a===q.correct)c++;else w++;});
+  testQ.forEach((q,i)=>{
+    const a=answers[i];
+    if(!a) s++;
+    else if(a===q.correct) c++;
+    else w++;
+  });
   const total=testQ.length,pct=Math.round(c/total*100);
 
   // Save to history
@@ -1363,7 +1488,7 @@ function submitExam(ask){
     title:document.getElementById('tTitle').value||'Mock Test',
     date:new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}),
     pct,c,w,s,total,
-    subject:document.getElementById('tSub').value,
+    subject:selectedSubjects.length?selectedSubjects.join(', '):'All',
     qTimers:{...qTimers},
     details:testQ.map((q,i)=>({id:q.id,subject:q.subject||'',correct:answers[i]===q.correct,skipped:!answers[i]}))
   };
@@ -1374,6 +1499,7 @@ function submitExam(ask){
 
   document.getElementById('examView').style.display='none';
   document.getElementById('pdfViewer').style.display='none'; examPdf={doc:null,page:1,total:1,rendering:false};
+
   document.getElementById('resultView').style.display='block';
   document.getElementById('scrollBody').style.display='block';
   document.getElementById('bottomNav').style.display='none';
@@ -1423,7 +1549,14 @@ function toggleReview(){
         ${q.image?`<img src="${q.image}" style="max-width:140px;max-height:80px;border-radius:6px;margin-bottom:7px;cursor:pointer;" onclick="openImgViewer('${q.image}')" />`:''}
         <div style="font-weight:600;font-size:0.87rem;margin-bottom:8px;">${q.qText}</div>
         <div style="display:flex;flex-wrap:wrap;gap:4px;">
-          ${['A','B','C','D'].map(op=>{let bg='var(--s2)';let bc='var(--border)';let ex='';if(op===q.correct){bg='rgba(16,185,129,.15)';bc='var(--green)';ex=' ✓';}if(op===ua&&op!==q.correct){bg='rgba(239,68,68,.12)';bc='var(--red)';ex=' ←';}return`<span style="padding:4px 10px;border-radius:7px;font-size:0.75rem;font-weight:600;background:${bg};border:1px solid ${bc};">${op}: ${q.options[op]}${ex}</span>`;}).join('')}
+          ${['A','B','C','D'].map(op=>{
+            const corrects = q.correct ? q.correct.split(',') : [];
+            const userSel = ua ? ua.split(',') : [];
+            let bg='var(--s2)';let bc='var(--border)';let ex='';
+            if(corrects.includes(op)){bg='rgba(16,185,129,.15)';bc='var(--green)';ex=' ✓';}
+            if(userSel.includes(op)&&!corrects.includes(op)){bg='rgba(239,68,68,.12)';bc='var(--red)';ex=' ✗';}
+            return`<span style="padding:4px 10px;border-radius:7px;font-size:0.75rem;font-weight:600;background:${bg};border:1px solid ${bc};">${op}: ${q.options[op]}${ex}</span>`;
+          }).join('')}
         </div>
         ${q.explanation?`<div style="font-size:0.78rem;color:var(--muted);margin-top:8px;">💡 ${q.explanation}</div>`:''}
         ${expMediaHTML(q.expMedia)}
@@ -1457,6 +1590,172 @@ function downloadApp(){
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);
   a.download='SmartMockTest.html';a.click();
   URL.revokeObjectURL(a.href);toast('✅ Downloading...','success');
+}
+
+/* ===== PDF TEST FLOW ===== */
+let pdfSaveQueue = [];
+let pdfSaveCurrent = 0;
+let pdfSaveExpMedia = [];
+let pdfSaveSelectedAns = '';
+
+function openPdfQCountPopup(){
+  const filled = Object.keys(homeAnsKey).length;
+  const inp = document.getElementById('pdfQCountInput');
+  if(inp) inp.value = filled > 0 ? filled : 10;
+  // Show warning if no answers marked
+  const warn = document.getElementById('pdfQCountWarn');
+  if(warn) warn.textContent = filled > 0
+    ? `✅ ${filled} answers marked on home page`
+    : '⚠️ No answers marked — go to Add page and mark answers first!';
+  openPopup('pdfQCountPopup');
+}
+
+function confirmPdfQCount(){
+  const n = parseInt(document.getElementById('pdfQCountInput').value)||10;
+  closePopup('pdfQCountPopup');
+  pdfQCount = n;
+  // Build testQ using homeAnsKey as correct answers
+  testQ = Array.from({length:n},(_,i)=>({
+    id:Date.now()+i,
+    qText:`Q${i+1}`,
+    options:{A:'A',B:'B',C:'C',D:'D'},
+    correct: homeAnsKey[i+1] || 'A',
+    subject:'', explanation:'', expMedia:[], image:null, pdfOnly:true
+  }));
+  launchExamView();
+}
+
+function launchExamView(){
+  isPdfOnlyTest = true;
+  answers={};
+  qTimers={};qTimerStart=Date.now();currentVisibleQ=0;
+  document.querySelectorAll('.page').forEach(e=>e.classList.remove('active'));
+  document.getElementById('scrollBody').style.display='none';
+  document.getElementById('bottomNav').style.display='none';
+  document.getElementById('examView').style.display='flex';
+  document.getElementById('examView').style.flexDirection='column';
+  document.getElementById('examView').style.height='calc(100vh - var(--sat) - var(--sab))';
+  document.getElementById('resultView').style.display='none';
+  loadExamPdf(testPdfData);
+  document.getElementById('pdfHalf').style.display = '';
+  document.getElementById('resizeHandle').style.display = '';
+  renderExamQ();renderDots();
+  if(timerInt)clearInterval(timerInt);
+  if(qTimerInterval)clearInterval(qTimerInterval);
+  const mins = parseInt(document.getElementById('tPdfTime').value)||30;
+  timeLeft=mins*60;tick();
+  timerInt=setInterval(()=>{timeLeft--;tick();if(timeLeft<=0){clearInterval(timerInt);submitExam(false);}},1000);
+  qTimerInterval=setInterval(()=>{
+    const now=Date.now();const elapsed=Math.floor((now-qTimerStart)/1000);
+    for(let i=0;i<testQ.length;i++){
+      const el=document.getElementById('qt'+i);if(!el)continue;
+      const t=(qTimers[i]||0)+(i===currentVisibleQ?elapsed:0);
+      const m=Math.floor(t/60),s=t%60;
+      el.textContent=m+':'+(s<10?'0':'')+s;
+      el.className='qtimer-badge'+(t>120?' danger':t>60?' warn':'');
+    }
+  },1000);
+}
+
+function startPdfSaveFlow(){
+  pdfSaveQueue = testQ.map((q,i)=>({qIndex:i, userAnswer:answers[i]||''}));
+  pdfSaveCurrent = 0;
+  openNextPdfSave();
+}
+
+function openNextPdfSave(){
+  if(pdfSaveCurrent >= pdfSaveQueue.length){
+    openCatPopup(()=>{
+      // Apply category to all saved questions
+      const total = pdfSaveQueue.length;
+      for(let i=questions.length-total;i<questions.length;i++){
+        if(questions[i]) questions[i].subject = pendingQ ? pendingQ.subject : '';
+      }
+      save();
+      toast(`✅ ${pdfSaveCurrent} questions saved!`,'success');
+      closePopup('pdfSavePopup');
+      backToSetup();
+    });
+    return;
+  }
+  pdfSaveExpMedia = [];
+  const item = pdfSaveQueue[pdfSaveCurrent];
+  pdfSaveSelectedAns = homeAnsKey[item.qIndex+1] || '';
+  document.getElementById('pdfSaveProgress').textContent = `Q ${pdfSaveCurrent+1} of ${pdfSaveQueue.length}`;
+  document.getElementById('pdfSaveBody').innerHTML = `
+    <p style="font-size:0.82rem;color:var(--muted);margin-bottom:12px;">
+      Your answer: <strong style="color:var(--acc);">${item.userAnswer||'Skipped'}</strong> — Which was correct?
+    </p>
+    <div class="ansk-opts" id="pdfSaveAnsKey"></div>
+    <div style="margin-top:14px;">
+      <div style="font-size:0.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">📎 Explanation Media</div>
+      <div class="exp-media-row">
+        <label class="exp-media-btn"><input type="file" accept="image/*" multiple onchange="addPdfExpMedia(event)">🖼️ Photos</label>
+        <label class="exp-media-btn"><input type="file" accept="application/pdf" multiple onchange="addPdfExpMedia(event)">📄 PDFs</label>
+      </div>
+      <div class="exp-thumb-row" id="pdfSaveThumbs"></div>
+    </div>
+    <div class="fg" style="margin-top:12px;">
+      <label>Explanation (optional)</label>
+      <textarea id="pdfSaveExp" placeholder="Why is this correct..." style="min-height:55px;"></textarea>
+    </div>
+  `;
+  renderPdfSaveAnsKey();
+  openPopup('pdfSavePopup');
+}
+
+function renderPdfSaveAnsKey(){
+  document.getElementById('pdfSaveAnsKey').innerHTML = ['A','B','C','D'].map(k=>`
+    <button class="ansk-btn${pdfSaveSelectedAns===k?' sel-'+k:''}" onclick="selectPdfSaveAns('${k}')">
+      <span class="ansk-letter">${pdfSaveSelectedAns===k?'✓ '+k:k}</span>
+    </button>
+  `).join('');
+}
+
+function selectPdfSaveAns(opt){
+  pdfSaveSelectedAns = pdfSaveSelectedAns===opt?'':opt;
+  renderPdfSaveAnsKey();
+}
+
+function addPdfExpMedia(e){
+  const files=Array.from(e.target.files);
+  files.forEach(f=>{
+    const r=new FileReader();const isPdf=f.type==='application/pdf';
+    r.onload=ev=>{pdfSaveExpMedia.push({type:isPdf?'pdf':'image',data:ev.target.result,name:f.name});renderPdfSaveThumbs();};
+    r.readAsDataURL(f);
+  });e.target.value='';
+}
+
+function renderPdfSaveThumbs(){
+  const el=document.getElementById('pdfSaveThumbs');if(!el)return;
+  el.innerHTML=pdfSaveExpMedia.map((m,i)=>m.type==='image'
+    ?`<div class="exp-thumb"><img src="${m.data}" onclick="openImgViewer('${m.data}')" /><button class="rm-btn" onclick="pdfSaveExpMedia.splice(${i},1);renderPdfSaveThumbs()">✕</button></div>`
+    :`<div class="exp-thumb"><div class="pdf-chip" onclick="openPdfBlob('${m.data}')"><span style="font-size:1.3rem">📄</span><span>${m.name.length>8?m.name.slice(0,8)+'…':m.name}</span></div><button class="rm-btn" onclick="pdfSaveExpMedia.splice(${i},1);renderPdfSaveThumbs()">✕</button></div>`
+  ).join('');
+}
+
+function pdfSaveNext(){
+  if(!pdfSaveSelectedAns){toast('Please select the correct answer','error');return;}
+  const item = pdfSaveQueue[pdfSaveCurrent];
+  const exp = document.getElementById('pdfSaveExp').value.trim();
+  questions.push({
+    id:Date.now()+pdfSaveCurrent,
+    qText:`Q${item.qIndex+1}`,
+    options:{A:'A',B:'B',C:'C',D:'D'},
+    correct:pdfSaveSelectedAns,
+    subject:'',
+    explanation:exp,
+    expMedia:[...pdfSaveExpMedia],
+    image:null,
+    pdfOnly:true
+  });
+  pdfSaveCurrent++;
+  openNextPdfSave();
+}
+
+function pdfSaveSkip(){
+  pdfSaveCurrent++;
+  openNextPdfSave();
 }
 
 /* ===== STREAK ===== */
@@ -1697,6 +1996,51 @@ function renderPageOnCanvas(pdfObj, canvasId, pageInfoId, cb) {
   });
 }
 
+/* ---- HOME PAGE ANSWER KEY ---- */
+let homeAnsKey = {}; // {1:"A,C", 2:"B"} multi-correct comma-separated
+
+function renderHomeAnsKeyBtns(){
+  const qNum = parseInt(document.getElementById("homeAnsKeyQNum")?.value)||1;
+  const sel = homeAnsKey[qNum] ? homeAnsKey[qNum].split(",") : [];
+  const colors = {A:"#4f7fff",B:"#10b981",C:"#f59e0b",D:"#ef4444"};
+  const el = document.getElementById("homeAnsKeyBtns");
+  if(!el) return;
+  el.innerHTML = ['A','B','C','D'].map(k=>{
+    const active = sel.includes(k);
+    const col = {A:'#4f7fff',B:'#10b981',C:'#f59e0b',D:'#ef4444'}[k];
+    return '<button onclick="setHomeAns('+qNum+',\''+k+'\''+')" style="padding:12px;border-radius:10px;border:2px solid '+(active?col:'var(--border)')+';background:'+(active?col+'30':'var(--s2)')+';color:'+(active?col:'var(--muted)')+';font-weight:800;font-size:1rem;cursor:pointer;transition:all .15s;">'+(active?'✓ ':'')+k+'</button>';
+  }).join('');
+  const filled = Object.keys(homeAnsKey).length;
+  const sumEl = document.getElementById('homeAnsKeySummary');
+  if(sumEl) sumEl.textContent = filled ? filled+' question'+(filled>1?'s':'')+' marked' : '';
+}
+
+
+function setHomeAns(qNum, opt){
+  let cur = homeAnsKey[qNum] ? homeAnsKey[qNum].split(",") : [];
+  if(cur.includes(opt)) cur = cur.filter(x=>x!==opt);
+  else cur.push(opt);
+  cur.sort();
+  if(cur.length) homeAnsKey[qNum] = cur.join(",");
+  else delete homeAnsKey[qNum];
+  renderHomeAnsKeyBtns();
+  try{localStorage.setItem("smt_home_anskey", JSON.stringify(homeAnsKey));}catch(e){}
+}
+
+// Listen to Q number change
+document.addEventListener('DOMContentLoaded', ()=>{
+  const inp = document.getElementById('homeAnsKeyQNum');
+  if(inp) inp.addEventListener('input', renderHomeAnsKeyBtns);
+});
+
+// Restore saved answer key
+(function restoreHomeAnsKey(){
+  try{
+    const d = localStorage.getItem('smt_home_anskey');
+    if(d) homeAnsKey = JSON.parse(d);
+  }catch(e){}
+})();
+
 /* ---- HOME PAGE PDF ---- */
 function loadHomePdf(e) {
   const f = e.target.files[0]; if (!f) return;
@@ -1722,6 +2066,7 @@ function initHomePdf(dataUrl, name) {
     pdfjsLib.getDocument({ data: arr }).promise.then(pdf => {
       homePdf.doc = pdf; homePdf.page = 1; homePdf.total = pdf.numPages; homePdf.rendering = false;
       renderPageOnCanvas(homePdf, 'homePdfCanvas', 'homePdfPageInfo', null);
+      renderHomeAnsKeyBtns();
     }).catch(() => toast('Could not open PDF','error'));
   });
 }
@@ -1737,7 +2082,8 @@ function homePdfNext() {
 
 function clearHomePdf() {
   homePdf = { doc:null, page:1, total:1, rendering:false, data:null, name:'' };
-  try { localStorage.removeItem('smt_home_pdf_data'); localStorage.removeItem('smt_home_pdf_name'); } catch(e){}
+  homeAnsKey = {};
+  try { localStorage.removeItem('smt_home_pdf_data'); localStorage.removeItem('smt_home_pdf_name'); localStorage.removeItem('smt_home_anskey'); } catch(e){}
   document.getElementById('homePdfEmpty').style.display = 'block';
   document.getElementById('homePdfViewer').style.display = 'none';
   document.getElementById('homePdfCanvas').width = 0;
@@ -1746,10 +2092,6 @@ function clearHomePdf() {
 function useHomePdfInTest() {
   if (!homePdf.data) return;
   testPdfData = homePdf.data;
-  document.getElementById('testPdfName').textContent = homePdf.name;
-  document.getElementById('testPdfChip').style.display = 'flex';
-  document.getElementById('ansKeySetupBox').style.display = 'block';
-  document.getElementById('pdfDropZone').style.display = 'none';
   goPage('setup');
   toast('✅ PDF set for test!','success');
 }
