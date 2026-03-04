@@ -2177,14 +2177,9 @@ function launchExamView(){
   const dots = document.getElementById('resizeDots');
   if(nav){ nav.style.display='flex'; }
   if(dots){ dots.style.display='none'; }
-  // Show shutter toggle
-  qShutterOpen = true;
+  // Hide shutter in PDF test
   const shutter = document.getElementById('qShutter');
-  if(shutter){ shutter.style.display='flex'; }
-  const examQs = document.getElementById('examQs');
-  if(examQs) examQs.style.display = '';
-  const submitWrap = document.querySelector('.exam-submit-wrap');
-  if(submitWrap) submitWrap.style.display = '';
+  if(shutter){ shutter.style.display='none'; }
   renderExamQ();renderDots();
   if(timerInt)clearInterval(timerInt);
   if(qTimerInterval)clearInterval(qTimerInterval);
