@@ -650,7 +650,7 @@ input,textarea,select,button{font-family:inherit;}
         <button class="btn btn-gold" onclick="retake()">🔄 Retake</button>
       </div>
       <button class="btn btn-primary" onclick="backToSetup()" style="margin-bottom:14px;">⚙️ New Test</button>
-      <div id="reviewArea" style="display:none;"></div>
+      <div id="reviewArea" style="display:none;max-height:70vh;overflow-y:auto;border-radius:10px;"></div>
     </div>
     <div style="height:20px;"></div>
   </div>
@@ -1706,7 +1706,15 @@ function submitExam(ask){
 
 function expMediaHTML(em){
   if(!em||!em.length)return'';
-  return`<div class="exp-media-box"><div class="exp-media-label">📎 Explanation Media</div><div class="exp-media-grid">${em.map(m=>m.type==='image'?`<img src="${m.data}" class="exp-media-img" onclick="openImgViewer('${m.data}')" />`:`<span style="display:flex;align-items:center;gap:5px;padding:6px 10px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.35);border-radius:7px;font-size:0.72rem;font-weight:700;color:var(--red);cursor:pointer;" onclick="openPdfBlob('${m.data}')">📄 ${m.name.length>14?m.name.slice(0,14)+'…':m.name}</span>`).join('')}</div></div>`;
+  return`<div class="exp-media-box" style="margin-top:10px;margin-bottom:4px;">
+    <div class="exp-media-label">📎 Explanation Media</div>
+    <div class="exp-media-grid">
+      ${em.map(m=>m.type==='image'
+        ?`<img src="${m.data}" style="width:100%;max-height:200px;object-fit:contain;border-radius:10px;border:1px solid var(--border);cursor:pointer;background:#000;display:block;margin-bottom:6px;" onclick="openImgViewer('${m.data}')" />`
+        :`<div style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.35);border-radius:9px;font-size:0.82rem;font-weight:700;color:var(--red);cursor:pointer;width:100%;box-sizing:border-box;margin-bottom:6px;" onclick="openPdfBlob('${m.data}')">📄 ${m.name.length>20?m.name.slice(0,20)+'…':m.name}</div>`
+      ).join('')}
+    </div>
+  </div>`;
 }
 
 function toggleReview(){
@@ -1721,10 +1729,13 @@ function toggleReview(){
       const st=!ua?'⬜ Skip':isC?'✅ Correct':'❌ Wrong';
       return`<div class="review-item ${cls}">
         <div class="rv-st" style="color:${sc}">${st} — Q.${i+1}</div>
-        <div style="display:flex;flex-wrap:wrap;gap:4px;">
+        <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;">
           ${['A','B','C','D'].map(op=>{let bg='var(--s2)';let bc='var(--border)';let ex='';if(op===q.correct){bg='rgba(16,185,129,.15)';bc='var(--green)';ex=' ✓';}if(op===ua&&op!==q.correct){bg='rgba(239,68,68,.12)';bc='var(--red)';ex=' ←';}return`<span style="padding:4px 12px;border-radius:7px;font-size:0.8rem;font-weight:700;background:${bg};border:1px solid ${bc};">${op}${ex}</span>`;}).join('')}
         </div>
+        ${expMediaHTML(q.expMedia)}
+        ${q.explanation?`<div style="font-size:0.78rem;color:var(--muted);margin-top:6px;">💡 ${q.explanation}</div>`:''}
       </div>`;
+
     }).join('');
   } else {
     a.innerHTML=testQ.map((q,i)=>{
@@ -1735,7 +1746,7 @@ function toggleReview(){
       const qt=qTimers[i]||0;const qm=Math.floor(qt/60),qs=qt%60;
       return`<div class="review-item ${cls}">
         <div class="rv-st" style="color:${sc}">${st} — Q.${i+1} ${q.subject?subChip(q.subject):''}</div>
-        ${q.image?`<img src="${q.image}" style="max-width:140px;max-height:80px;border-radius:6px;margin-bottom:7px;cursor:pointer;" onclick="openImgViewer('${q.image}')" />`:''}
+        ${q.image?`<img src="${q.image}" style="width:100%;max-height:260px;object-fit:contain;border-radius:10px;border:1px solid var(--border);background:#000;display:block;margin-bottom:10px;cursor:pointer;" onclick="openImgViewer('${q.image}')" />`:''}
         <div style="font-weight:600;font-size:0.87rem;margin-bottom:8px;">${q.qText}</div>
         <div style="display:flex;flex-wrap:wrap;gap:4px;">
           ${['A','B','C','D'].map(op=>{
@@ -1747,8 +1758,8 @@ function toggleReview(){
             return`<span style="padding:4px 10px;border-radius:7px;font-size:0.75rem;font-weight:600;background:${bg};border:1px solid ${bc};">${op}: ${q.options[op]}${ex}</span>`;
           }).join('')}
         </div>
-        ${q.explanation?`<div style="font-size:0.78rem;color:var(--muted);margin-top:8px;">💡 ${q.explanation}</div>`:''}
         ${expMediaHTML(q.expMedia)}
+        ${q.explanation?`<div style="font-size:0.78rem;color:var(--muted);margin-top:8px;">💡 ${q.explanation}</div>`:''}
         <div class="rv-qtime">⏱️ Time: ${qm}:${qs<10?'0':''}${qs}${qt>90?' — <span style="color:var(--red)">Slow</span>':''}</div>
       </div>`;
     }).join('');
