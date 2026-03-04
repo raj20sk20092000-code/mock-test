@@ -1740,22 +1740,24 @@ function startExam(){
   document.getElementById('resultView').style.display='none';
   history.pushState({exam:true}, '', '');
 
-  // Normal bank test - hide PDF half, full height questions
+  // Normal bank test - full screen questions
   if(!isPdfOnlyTest){
     document.getElementById('pdfHalf').style.display = 'none';
     document.getElementById('resizeHandle').style.display = 'none';
+    document.getElementById('splitBody').style.flexDirection = 'column';
     const qh = document.getElementById('questionsHalf');
     qh.style.flex = '1';
     qh.style.height = '100%';
-    qh.style.maxHeight = '';
-    // Hide page nav, show resize dots
+    qh.style.minHeight = '0';
+    qh.style.overflow = 'auto';
+    // Hide page nav
     const nav = document.getElementById('pdfPageNav');
     const dots = document.getElementById('resizeDots');
     if(nav) nav.style.display = 'none';
-    if(dots) dots.style.display = '';
-    // Hide qdots shutter wrapper (not needed for bank test)
+    if(dots) dots.style.display = 'none';
+    // Hide qdots shutter wrapper
     const wrapper = document.getElementById('qdotsWrapper');
-    if(wrapper){ wrapper.style.maxHeight = '110px'; wrapper.style.display = 'none'; }
+    if(wrapper) wrapper.style.display = 'none';
     qdotsOpen = true;
   } else {
     // Load PDF using PDF.js
