@@ -412,8 +412,12 @@ input,textarea,select,button{font-family:inherit;}
       </div>
       <div id="homePdfViewer" style="display:none;">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-          <span id="homePdfName" style="flex:1;font-size:0.75rem;color:var(--red);font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+          <span id="homePdfName" style="flex:1;font-size:0.72rem;color:var(--muted);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
           <button onclick="clearHomePdf()" style="background:var(--red);color:white;border:none;border-radius:7px;padding:4px 10px;font-size:0.72rem;font-weight:700;cursor:pointer;">✕ Remove</button>
+        </div>
+        <!-- Custom Name -->
+        <div style="margin-bottom:10px;">
+          <input type="text" id="homePdfCustomName" placeholder="✏️ Custom name (optional)" style="width:100%;padding:9px 12px;background:var(--s2);border:1px solid var(--border);border-radius:9px;color:var(--text);font-size:0.85rem;font-weight:600;box-sizing:border-box;">
         </div>
         <!-- Page nav -->
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
@@ -438,6 +442,21 @@ input,textarea,select,button{font-family:inherit;}
           </div>
           <input type="hidden" id="homeAnsKeyQNum" value="1">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;" id="homeAnsKeyBtns"></div>
+        </div>
+        <!-- Marking Scheme -->
+        <div style="margin-top:12px;background:var(--s2);border:1px solid var(--border);border-radius:10px;padding:12px;">
+          <div style="font-size:0.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">🎯 Marking Scheme</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+            <div>
+              <label style="font-size:0.72rem;color:var(--muted);font-weight:600;">✅ Correct (+)</label>
+              <input type="number" id="homeMarkCorrect" value="1" min="0.5" step="0.5" style="width:100%;margin-top:4px;padding:8px;background:var(--s1);border:1px solid var(--green);border-radius:8px;color:var(--green);font-size:0.9rem;font-weight:700;text-align:center;">
+            </div>
+            <div>
+              <label style="font-size:0.72rem;color:var(--muted);font-weight:600;">❌ Wrong (-)</label>
+              <input type="number" id="homeMarkWrong" value="0" min="0" step="0.25" style="width:100%;margin-top:4px;padding:8px;background:var(--s1);border:1px solid var(--red);border-radius:8px;color:var(--red);font-size:0.9rem;font-weight:700;text-align:center;">
+            </div>
+          </div>
+          <div style="font-size:0.7rem;color:var(--muted);text-align:center;">Max Marks = Questions × Correct marks</div>
         </div>
         <!-- Use in test button -->
         <button onclick="useHomePdfInTest()" style="width:100%;margin-top:12px;padding:12px;background:linear-gradient(135deg,var(--red),#c2410c);color:white;border:none;border-radius:9px;font-size:0.88rem;font-weight:700;cursor:pointer;">🎯 Save to Test</button>
@@ -490,6 +509,18 @@ input,textarea,select,button{font-family:inherit;}
       <div class="fg"><label>Total Questions</label><input type="number" id="tNum" value="10" min="1"></div>
       <div class="fg"><label>Time (Minutes)</label><input type="number" id="tTime" value="30" min="1"></div>
       <div class="fg">
+        <label>Negative Marking</label>
+        <div style="display:flex;align-items:center;gap:8px;background:var(--s2);border:1px solid var(--border);border-radius:9px;padding:10px 12px;">
+          <input type="checkbox" id="negMarkEnable" onchange="toggleNegMark()" style="width:18px;height:18px;cursor:pointer;accent-color:var(--red);">
+          <span style="font-size:0.85rem;color:var(--text);font-weight:600;">Enable Negative Marking</span>
+          <div id="negMarkVal" style="display:none;margin-left:auto;display:none;align-items:center;gap:6px;">
+            <span style="font-size:0.78rem;color:var(--muted);">-</span>
+            <input type="number" id="negMarkAmt" value="0.25" step="0.25" min="0.25" max="4" style="width:70px;padding:4px 8px;background:var(--s1);border:1px solid var(--red);border-radius:7px;color:var(--red);font-size:0.88rem;font-weight:700;text-align:center;">
+            <span style="font-size:0.78rem;color:var(--muted);">per wrong</span>
+          </div>
+        </div>
+      </div>
+      <div class="fg">
         <label>Subject Filter</label>
         <div id="subFilterWrap" style="display:flex;flex-wrap:wrap;gap:7px;padding:10px;background:var(--s2);border:1px solid var(--border);border-radius:9px;min-height:44px;"></div>
       </div>
@@ -507,8 +538,25 @@ input,textarea,select,button{font-family:inherit;}
     <div class="card" style="border:1px solid rgba(239,68,68,.35);">
       <div class="card-head" style="color:var(--red);">📄 PDF Test</div>
       <div id="pdfTestStatus"></div>
-      <div class="fg"><label>Total Questions</label><input type="number" id="tPdfNum" value="10" min="1"></div>
+      <div class="fg"><label>Total Questions</label><input type="number" id="tPdfNum" value="10" min="1" oninput="updatePdfMaxMarks()"></div>
       <div class="fg"><label>Time (Minutes)</label><input type="number" id="tPdfTime" value="30" min="1"></div>
+      <!-- Marking Scheme -->
+      <div class="fg">
+        <label>🎯 Marking Scheme</label>
+        <!-- PDF saved scheme preview -->
+        <div id="pdfSavedMarkInfo" style="font-size:0.75rem;color:var(--muted);background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;margin-bottom:8px;display:none;"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <div>
+            <label style="font-size:0.72rem;color:var(--muted);font-weight:600;">✅ Correct (+)</label>
+            <input type="number" id="pdfMarkCorrect" value="1" min="0.5" step="0.5" style="width:100%;margin-top:4px;padding:8px;background:var(--s2);border:1px solid var(--green);border-radius:8px;color:var(--green);font-size:0.9rem;font-weight:700;text-align:center;">
+          </div>
+          <div>
+            <label style="font-size:0.72rem;color:var(--muted);font-weight:600;">❌ Wrong (-)</label>
+            <input type="number" id="pdfMarkWrong" value="0" min="0" step="0.25" style="width:100%;margin-top:4px;padding:8px;background:var(--s2);border:1px solid var(--red);border-radius:8px;color:var(--red);font-size:0.9rem;font-weight:700;text-align:center;">
+          </div>
+        </div>
+        <div id="pdfMaxMarksInfo" style="font-size:0.7rem;color:var(--muted);text-align:center;margin-top:6px;"></div>
+      </div>
       <button class="btn btn-red" onclick="startPdfTest()">🚀 Start PDF Test</button>
     </div>
 
@@ -690,6 +738,7 @@ input,textarea,select,button{font-family:inherit;}
           <div class="rs"><div class="rs-v" style="color:var(--gold)" id="rsS">0</div><div class="rs-l">⬜ Skip</div></div>
           <div class="rs"><div class="rs-v" style="color:var(--acc)" id="rsT">0</div><div class="rs-l">📋 Total</div></div>
         </div>
+        <div id="negMarkInfo"></div>
       </div>
       <div class="btn-row" style="margin-bottom:12px;">
         <button class="btn btn-ghost" onclick="toggleReview()">📖 Review</button>
@@ -827,6 +876,129 @@ input,textarea,select,button{font-family:inherit;}
 </div>
 
 <!-- POPUP: PDF POST-TEST SAVE -->
+<!-- Notification Settings Popup -->
+<div class="popup-overlay" id="notifSettingsPopup">
+  <div class="popup-sheet">
+    <div class="popup-handle"></div>
+    <div class="popup-header">
+      <span style="font-size:0.88rem;font-weight:800;">🔔 Notification Settings</span>
+      <button onclick="closePopup('notifSettingsPopup')" class="popup-close">✕</button>
+    </div>
+    <div style="padding:0 16px 24px;">
+      <!-- Permission status -->
+      <div style="background:var(--s2);border-radius:10px;padding:10px 14px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;">
+        <span style="font-size:0.78rem;font-weight:600;color:var(--muted);">Permission</span>
+        <span id="notifPermStatus" style="font-size:0.78rem;font-weight:700;">Checking...</span>
+      </div>
+      <!-- Enable toggle -->
+      <div style="background:var(--s2);border-radius:10px;padding:12px 14px;margin-bottom:10px;display:flex;align-items:center;gap:12px;">
+        <span style="font-size:1.2rem;">🔔</span>
+        <div style="flex:1;">
+          <div style="font-size:0.85rem;font-weight:700;color:var(--text);">Daily Reminder</div>
+          <div style="font-size:0.72rem;color:var(--muted);">Review karne ka reminder</div>
+        </div>
+        <label style="position:relative;display:inline-block;width:44px;height:24px;">
+          <input type="checkbox" id="notifToggle" style="opacity:0;width:0;height:0;" onchange="">
+          <span onclick="document.getElementById('notifToggle').click()" style="position:absolute;cursor:pointer;inset:0;background:var(--s3);border-radius:24px;transition:.3s;" id="notifSlider"></span>
+        </label>
+      </div>
+      <!-- Time picker -->
+      <div style="background:var(--s2);border-radius:10px;padding:12px 14px;margin-bottom:14px;display:flex;align-items:center;gap:12px;">
+        <span style="font-size:1.2rem;">⏰</span>
+        <div style="flex:1;">
+          <div style="font-size:0.85rem;font-weight:700;color:var(--text);">Reminder Time</div>
+          <div style="font-size:0.72rem;color:var(--muted);">Kab notification chahiye</div>
+        </div>
+        <input type="time" id="notifTime" value="08:00" style="background:var(--s3);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:6px 10px;font-size:0.85rem;font-weight:700;">
+      </div>
+      <!-- Info box -->
+      <div style="background:rgba(79,127,255,.08);border:1px solid rgba(79,127,255,.3);border-radius:10px;padding:10px 14px;margin-bottom:16px;font-size:0.75rem;color:var(--muted);">
+        💡 App open hone par notification check hoti hai. Phone mein browser notifications allow karo settings se.
+      </div>
+      <!-- Test button -->
+      <button onclick="testNotification()" style="width:100%;padding:10px;background:var(--s2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:0.85rem;font-weight:700;cursor:pointer;margin-bottom:10px;">🔔 Test Notification</button>
+      <button onclick="saveNotifAndClose()" style="width:100%;padding:12px;background:linear-gradient(135deg,#7c3aed,#4f7fff);color:#fff;border:none;border-radius:10px;font-size:0.9rem;font-weight:800;cursor:pointer;">✅ Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- SRS Settings Popup -->
+<div class="popup-overlay" id="srsSettingsPopup">
+  <div class="popup-sheet">
+    <div class="popup-handle"></div>
+    <div class="popup-header">
+      <span style="font-size:0.88rem;font-weight:800;">⚙️ Smart Review Settings</span>
+      <button onclick="closePopup('srsSettingsPopup')" class="popup-close">✕</button>
+    </div>
+    <div style="padding:0 16px 24px;">
+      <div style="font-size:0.72rem;color:var(--muted);margin-bottom:16px;">Daily new cards limit — due cards are always shown</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;">
+        <div style="background:var(--s2);border-radius:12px;padding:14px;">
+          <div style="font-size:0.72rem;font-weight:700;color:var(--muted);margin-bottom:8px;">📚 Bank Questions</div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <button onclick="adjustSrs('bank',-5)" style="width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:var(--s3);color:var(--text);font-size:1.1rem;font-weight:800;cursor:pointer;">−</button>
+            <div id="srsNewBankVal" style="flex:1;text-align:center;font-size:1.4rem;font-weight:800;color:var(--acc);">10</div>
+            <button onclick="adjustSrs('bank',5)" style="width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:var(--s3);color:var(--text);font-size:1.1rem;font-weight:800;cursor:pointer;">+</button>
+          </div>
+          <div style="font-size:0.68rem;color:var(--muted);text-align:center;margin-top:4px;">per day</div>
+        </div>
+        <div style="background:var(--s2);border-radius:12px;padding:14px;">
+          <div style="font-size:0.72rem;font-weight:700;color:var(--muted);margin-bottom:8px;">📄 PDF Questions</div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <button onclick="adjustSrs('pdf',-5)" style="width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:var(--s3);color:var(--text);font-size:1.1rem;font-weight:800;cursor:pointer;">−</button>
+            <div id="srsNewPdfVal" style="flex:1;text-align:center;font-size:1.4rem;font-weight:800;color:var(--red);">5</div>
+            <button onclick="adjustSrs('pdf',5)" style="width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:var(--s3);color:var(--text);font-size:1.1rem;font-weight:800;cursor:pointer;">+</button>
+          </div>
+          <div style="font-size:0.68rem;color:var(--muted);text-align:center;margin-top:4px;">per day</div>
+        </div>
+      </div>
+      <div style="background:var(--s2);border-radius:10px;padding:12px;font-size:0.75rem;color:var(--muted);margin-bottom:16px;">
+        💡 <b>Tip:</b> Beginners ke liye 10+5, Advanced ke liye 20+10 recommended hai. Zyada cards = zyada pressure!
+      </div>
+      <button onclick="saveSrsSettingsAndClose()" style="width:100%;padding:12px;background:linear-gradient(135deg,#7c3aed,#4f7fff);color:#fff;border:none;border-radius:10px;font-size:0.9rem;font-weight:800;cursor:pointer;">✅ Save Settings</button>
+    </div>
+  </div>
+</div>
+
+<!-- SRS Smart Review Popup -->
+<div class="popup-overlay" id="srsPopup">
+  <div class="popup-sheet" style="max-height:92vh;display:flex;flex-direction:column;">
+    <div class="popup-handle"></div>
+    <!-- Header -->
+    <div style="padding:12px 16px 8px;flex-shrink:0;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <span style="font-size:0.88rem;font-weight:800;">🧠 Smart Review</span>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span id="srsInterval" style="font-size:0.72rem;font-weight:700;padding:2px 8px;background:var(--s2);border-radius:6px;"></span>
+          <span id="srsCounter" style="font-size:0.75rem;color:var(--muted);font-weight:700;"></span>
+          <button onclick="closePopup('srsPopup')" class="popup-close">✕</button>
+        </div>
+      </div>
+      <!-- Progress bar -->
+      <div style="background:var(--s2);border-radius:4px;height:5px;">
+        <div id="srsProgress" style="background:linear-gradient(90deg,#7c3aed,#4f7fff);height:5px;border-radius:4px;width:0%;transition:width .4s;"></div>
+      </div>
+    </div>
+    <!-- Question body -->
+    <div style="flex:1;overflow-y:auto;padding:8px 16px 16px;-webkit-overflow-scrolling:touch;">
+      <div id="srsQBody"></div>
+      <div id="srsFinish" style="display:none;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- PDF Stats Popup -->
+<div class="popup-overlay" id="pdfStatsPopup">
+  <div class="popup-sheet" style="max-height:85vh;">
+    <div class="popup-handle"></div>
+    <div class="popup-header">
+      <span id="pdfStatsTitle" style="font-size:0.88rem;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;">PDF Stats</span>
+      <button onclick="closePopup('pdfStatsPopup')" class="popup-close">✕</button>
+    </div>
+    <div style="overflow-y:auto;padding:0 16px 16px;max-height:70vh;-webkit-overflow-scrolling:touch;" id="pdfStatsBody"></div>
+  </div>
+</div>
+
 <!-- History Review Popup -->
 <div class="popup-overlay" id="histReviewPopup">
   <div class="popup-sheet" style="max-height:85vh;">
@@ -915,6 +1087,8 @@ input,textarea,select,button{font-family:inherit;}
 <script>
 /* ===== STATE ===== */
 let questions = [];
+let srsData = {}; // {qId: {interval, dueDate, ease, reps}}
+let srsSettings = { newBankPerDay: 10, newPdfPerDay: 5 };
 let testQ = [], answers = {}, timerInt = null, timeLeft = 0;
 let imgPickedData = null, imgExpMedia = [];
 let mQImgData = null, mExpMedia = [];
@@ -922,6 +1096,9 @@ let testPdfData = null;
 let pdfAnsKey = {};
 let pdfQCount = 10;
 let isPdfOnlyTest = false;
+let negMarkEnabled = false;
+let negMarkAmt = 0.25;
+let markCorrectVal = 1;
 let testHistory = [], streakData = {};
 let qTimers = {}, qTimerStart = 0, currentVisibleQ = 0, qTimerInterval = null;
 let selectedSubjects = [];
@@ -1083,11 +1260,25 @@ function checkAutoBackup(){
   }catch(e){}
 }
 
-function doAutoBackup(){
+async function doAutoBackup(){
   if(!questions.length) return;
   try{
     const date = new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'2-digit'}).replace(/ /g,'-');
-    const data = JSON.stringify(questions, null, 2);
+    
+    // Gather PDF meta (without raw PDF data to keep size small)
+    let pdfMeta = [];
+    try{ pdfMeta = await loadPdfMeta(); }catch(e){}
+
+    const data = JSON.stringify({
+      version: 2,
+      date: new Date().toISOString(),
+      questions,
+      pdfMeta,
+      testHistory: testHistory || [],
+      homeAnsKey: homeAnsKey || {},
+      srsData: srsData || {}
+    }, null, 2);
+
     const a = document.createElement('a');
     a.href = 'data:application/json,' + encodeURIComponent(data);
     a.download = `SmartMock_Backup_${date}.json`;
@@ -1119,6 +1310,11 @@ async function initApp(){
   // Load history & streak from localStorage (small data)
   try{testHistory=JSON.parse(localStorage.getItem('smt_history')||'[]');}catch(e){}
   try{streakData=JSON.parse(localStorage.getItem('smt_streak')||'{}');}catch(e){}
+  // Load SRS data
+  await loadSrsData();
+  // Load notification settings
+  await loadNotifSettings();
+  if(notifSettings.enabled) scheduleNotifCheck();
   // Restore home PDF
   try{
     const hpdf = await dbMiscGet('home_pdf_data');
@@ -1130,7 +1326,6 @@ async function initApp(){
     const ak = await dbMiscGet('home_anskey');
     if(ak) homeAnsKey = ak;
     else {
-      // migrate from localStorage
       const old = localStorage.getItem('smt_home_anskey');
       if(old){ homeAnsKey=JSON.parse(old); await dbMiscSet('home_anskey',homeAnsKey); }
     }
@@ -1397,6 +1592,428 @@ function renderExpThumbs(prefix,thumbElId){
 }
 
 /* ===== BANK ===== */
+/* ===== SPACED REPETITION SYSTEM (SRS) ===== */
+// SM-2 inspired algorithm
+// srsData[id] = { interval:1, dueDate:'2026-03-05', ease:2.5, reps:0 }
+
+function srsToday(){ return new Date().toISOString().slice(0,10); }
+
+function openSrsSettings(){
+  document.getElementById('srsNewBankVal').textContent = srsSettings.newBankPerDay;
+  document.getElementById('srsNewPdfVal').textContent = srsSettings.newPdfPerDay;
+  openPopup('srsSettingsPopup');
+}
+
+function adjustSrs(type, delta){
+  if(type==='bank'){
+    srsSettings.newBankPerDay = Math.max(5, Math.min(100, srsSettings.newBankPerDay + delta));
+    document.getElementById('srsNewBankVal').textContent = srsSettings.newBankPerDay;
+  } else {
+    srsSettings.newPdfPerDay = Math.max(0, Math.min(50, srsSettings.newPdfPerDay + delta));
+    document.getElementById('srsNewPdfVal').textContent = srsSettings.newPdfPerDay;
+  }
+}
+
+async function saveSrsSettingsAndClose(){
+  await saveSrsSettings();
+  closePopup('srsSettingsPopup');
+  renderPracticeSets();
+  toast('✅ Settings saved!','success');
+}
+
+function srsDueToday(){
+  const today = srsToday();
+  // Bank questions
+  const bankDue = questions.filter(q => {
+    const s = srsData[q.id];
+    return s && s.dueDate <= today;
+  });
+  // PDF questions
+  const pdfDue = [];
+  Object.keys(srsData).forEach(id => {
+    if(id.startsWith('pdf_')){
+      const s = srsData[id];
+      if(s && s.dueDate <= today) pdfDue.push({id, isPdf:true, pdfId:s.pdfId, pageNum:s.pageNum, qText:`Q${s.pageNum}`, correct:s.correct||''});
+    }
+  });
+  return [...bankDue, ...pdfDue];
+}
+
+function srsNewCards(){
+  // Bank questions never reviewed
+  const bankNew = questions.filter(q => !srsData[q.id]);
+  return bankNew;
+}
+
+async function buildPdfSrsCards(pdfId, ansKey, totalPages){
+  // Create SRS entries for PDF pages that have answer keys set
+  const pages = Object.keys(ansKey).map(Number).filter(n=>n>=1&&n<=totalPages);
+  pages.forEach(pageNum => {
+    const id = `pdf_${pdfId}_${pageNum}`;
+    if(!srsData[id]){
+      // New PDF question — mark as new (no dueDate yet, will be added to new queue)
+      srsData[id] = { pdfId, pageNum, correct: ansKey[pageNum], interval:1, dueDate: srsToday(), ease:2.5, reps:0, isPdf:true };
+    }
+  });
+  await saveSrsData();
+}
+
+async function getPdfSrsNewCards(){
+  try {
+    const pdfList = await loadPdfMeta();
+    const today = srsToday();
+    const newPdfCards = [];
+    pdfList.forEach(p => {
+      const ansKey = p.ansKey || {};
+      Object.keys(ansKey).forEach(pageNum => {
+        const id = `pdf_${p.id}_${pageNum}`;
+        if(!srsData[id]){
+          newPdfCards.push({id, isPdf:true, pdfId:p.id, pdfName:p.name, pageNum:parseInt(pageNum), qText:`Q${pageNum} — ${p.name}`, correct:ansKey[pageNum]});
+        }
+      });
+    });
+    return newPdfCards;
+  } catch(e){ return []; }
+}
+
+async function saveSrsData(){
+  try { await dbMiscSet('srs_data', srsData); } catch(e){}
+  try { localStorage.setItem('srs_data', JSON.stringify(srsData)); } catch(e){}
+}
+
+async function saveSrsSettings(){
+  try { await dbMiscSet('srs_settings', srsSettings); } catch(e){}
+  try { localStorage.setItem('srs_settings', JSON.stringify(srsSettings)); } catch(e){}
+}
+
+async function loadSrsData(){
+  try {
+    const d = await dbMiscGet('srs_data');
+    if(d) { srsData = d; }
+  } catch(e){}
+  try {
+    const d = localStorage.getItem('srs_data');
+    if(d && !Object.keys(srsData).length) srsData = JSON.parse(d);
+  } catch(e){}
+  try {
+    const s = await dbMiscGet('srs_settings');
+    if(s) srsSettings = {...srsSettings, ...s};
+  } catch(e){}
+  try {
+    const s = localStorage.getItem('srs_settings');
+    if(s) srsSettings = {...srsSettings, ...JSON.parse(s)};
+  } catch(e){}
+}
+
+function srsUpdateCard(id, quality){ 
+  // quality: 0=wrong, 1=hard, 2=correct, 3=easy
+  let s = srsData[id] || { interval:1, dueDate:srsToday(), ease:2.5, reps:0 };
+  
+  if(quality === 0){ 
+    // Wrong — reset to 1 day
+    s.reps = 0;
+    s.interval = 1;
+  } else {
+    s.reps++;
+    if(s.reps === 1) s.interval = 1;
+    else if(s.reps === 2) s.interval = 3;
+    else {
+      s.interval = Math.round(s.interval * s.ease);
+    }
+    // Update ease factor
+    s.ease = Math.max(1.3, s.ease + (0.1 - (3-quality)*(0.08 + (3-quality)*0.02)));
+  }
+  
+  // Set next due date
+  const due = new Date();
+  due.setDate(due.getDate() + s.interval);
+  s.dueDate = due.toISOString().slice(0,10);
+  srsData[id] = s;
+}
+
+function srsIntervalLabel(id){
+  const s = srsData[id];
+  if(!s) return 'New';
+  const today = srsToday();
+  if(s.dueDate <= today) return 'Due';
+  const days = Math.round((new Date(s.dueDate) - new Date(today))/(1000*60*60*24));
+  return days === 1 ? 'Tomorrow' : `${days}d`;
+}
+
+function renderSmartReview(){
+  const el = document.getElementById('practiceSetsSection');
+  if(!el) return;
+  
+  const due = srsDueToday();
+  const newCards = srsNewCards();
+  const totalDue = due.length;
+  const totalNew = Math.min(newCards.length, 10); // max 10 new per day
+  const total = totalDue + totalNew;
+  
+  // Build smart review card
+  const urgencyColor = totalDue > 10 ? 'var(--red)' : totalDue > 0 ? 'var(--gold)' : 'var(--green)';
+  const urgencyBg = totalDue > 10 ? 'rgba(239,68,68,.1)' : totalDue > 0 ? 'rgba(245,158,11,.08)' : 'rgba(16,185,129,.08)';
+  
+  const srCard = `
+  <div style="margin-bottom:16px;">
+    <div style="font-size:0.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">🧠 Smart Review</div>
+    <div onclick="startSmartReview()" style="border-radius:14px;border:2px solid ${urgencyColor}44;background:${urgencyBg};padding:14px;cursor:pointer;position:relative;overflow:hidden;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div style="width:52px;height:52px;border-radius:12px;background:linear-gradient(135deg,#7c3aed,#4f7fff);display:flex;align-items:center;justify-content:center;font-size:1.6rem;flex-shrink:0;">🧠</div>
+        <div style="flex:1;">
+          <div style="font-size:0.92rem;font-weight:800;color:var(--text);">Smart Review</div>
+          <div style="font-size:0.75rem;color:var(--muted);margin-top:2px;">Spaced Repetition — Remember more!</div>
+          <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;">
+            ${totalDue > 0 ? `<span style="font-size:0.72rem;font-weight:700;padding:2px 8px;background:${urgencyColor}22;border:1px solid ${urgencyColor}55;border-radius:6px;color:${urgencyColor};">⏰ ${totalDue} due</span>` : ''}
+            ${totalNew > 0 ? `<span style="font-size:0.72rem;font-weight:700;padding:2px 8px;background:rgba(79,127,255,.1);border:1px solid rgba(79,127,255,.4);border-radius:6px;color:#4f7fff;">✨ ${totalNew} new</span>` : ''}
+            ${total === 0 ? `<span style="font-size:0.72rem;font-weight:700;padding:2px 8px;background:rgba(16,185,129,.1);border:1px solid var(--green);border-radius:6px;color:var(--green);">✅ All caught up!</span>` : ''}
+          </div>
+        </div>
+        ${total > 0 ? `<div style="background:linear-gradient(135deg,#7c3aed,#4f7fff);color:#fff;border-radius:10px;padding:8px 16px;font-size:0.85rem;font-weight:800;flex-shrink:0;">▶ Start</div>` : ''}
+      </div>
+      ${totalDue > 0 ? `
+      <div style="margin-top:10px;background:rgba(0,0,0,.2);border-radius:6px;height:4px;">
+        <div style="background:${urgencyColor};height:4px;border-radius:6px;width:${Math.min(100,totalDue*5)}%;transition:width .5s;"></div>
+      </div>` : ''}
+    </div>
+    <div style="height:1px;background:var(--border);margin:14px 0 10px;"></div>
+  </div>`;
+  
+  // Inject at top of practiceSetsSection
+  const existing = el.innerHTML;
+  // Only update SRS card part
+  const marker = '<!-- SRS_CARD -->';
+  const endMarker = '<!-- /SRS_CARD -->';
+  if(el.querySelector('#srsCard')){
+    document.getElementById('srsCard').outerHTML = `<div id="srsCard">${srCard}</div>`;
+  } else {
+    el.innerHTML = `<div id="srsCard">${srCard}</div>` + existing;
+  }
+}
+
+let srsSession = { queue:[], current:0, results:[], startTime:0 };
+
+async function startSmartReview(){
+  const due = srsDueToday();
+  const bankNew = srsNewCards().slice(0, srsSettings.newBankPerDay);
+  const pdfNew = (await getPdfSrsNewCards()).slice(0, srsSettings.newPdfPerDay);
+  const queue = [...due, ...bankNew, ...pdfNew];
+
+  if(!queue.length){ toast('No questions due — come back tomorrow! 🎉','success'); return; }
+
+  // Shuffle
+  for(let i=queue.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [queue[i],queue[j]]=[queue[j],queue[i]];
+  }
+
+  // Load PDF data for any PDF cards in queue
+  const pdfIds = [...new Set(queue.filter(q=>q.isPdf).map(q=>q.pdfId))];
+  window._srsPdfDocs = {};
+  await Promise.all(pdfIds.map(async pdfId => {
+    try {
+      const data = await getPdfData(pdfId);
+      if(data){
+        await new Promise(res => ensurePdfJs(async () => {
+          const doc = await pdfjsLib.getDocument({data: atob(data.split(',')[1])}).promise;
+          window._srsPdfDocs[pdfId] = doc;
+          res();
+        }));
+      }
+    } catch(e){}
+  }));
+
+  srsSession = { queue, current:0, results:[], startTime:Date.now() };
+  openPopup('srsPopup');
+  renderSrsCard();
+}
+
+function renderSrsCard(){
+  const {queue, current} = srsSession;
+  if(current >= queue.length){ finishSrsSession(); return; }
+
+  const q = queue[current];
+  const progress = Math.round((current/queue.length)*100);
+  const s = srsData[q.id];
+  const isNew = !s || s.reps===0;
+  const intervalLabel = srsIntervalLabel(q.id);
+
+  document.getElementById('srsProgress').style.width = progress+'%';
+  document.getElementById('srsCounter').textContent = `${current+1} / ${queue.length}`;
+  document.getElementById('srsInterval').textContent = isNew ? '✨ New' : `⏰ ${intervalLabel}`;
+  document.getElementById('srsInterval').style.color = isNew ? '#4f7fff' : 'var(--gold)';
+
+  const qBody = document.getElementById('srsQBody');
+
+  if(q.isPdf){
+    // PDF question — show canvas + ABCD
+    qBody.innerHTML = `
+      <div style="font-size:0.72rem;color:var(--muted);font-weight:700;margin-bottom:6px;">📄 ${q.pdfName||'PDF'} — Page ${q.pageNum}</div>
+      <div style="border-radius:10px;overflow:hidden;border:1px solid var(--border);background:#111;margin-bottom:10px;position:relative;">
+        <canvas id="srsPdfCanvas" style="display:block;width:100%;height:auto;"></canvas>
+        <div style="position:absolute;bottom:0;left:0;right:0;display:flex;justify-content:center;gap:8px;background:rgba(0,0,0,.6);padding:4px;">
+          <button onclick="srsPdfPrev()" style="background:none;border:none;color:#fff;font-size:0.9rem;cursor:pointer;padding:2px 8px;">◀</button>
+          <span id="srsPdfPageInfo" style="color:#fff;font-size:0.72rem;font-weight:700;line-height:2;"></span>
+          <button onclick="srsPdfNext()" style="background:none;border:none;color:#fff;font-size:0.9rem;cursor:pointer;padding:2px 8px;">▶</button>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;" id="srsOptions"></div>
+      <div id="srsAnswerReveal" style="display:none;margin-top:12px;"></div>
+    `;
+    // Render PDF page
+    srsSession.pdfPage = q.pageNum;
+    renderSrsPdfPage(q.pdfId, q.pageNum);
+    renderSrsOptions(q);
+  } else {
+    // Bank question
+    qBody.innerHTML = `
+      ${q.image ? `<img src="${q.image}" style="width:100%;max-height:180px;object-fit:contain;border-radius:10px;border:1px solid var(--border);background:#000;margin-bottom:10px;" onclick="openImgViewer('${q.image}')" />` : ''}
+      <div style="font-size:0.88rem;font-weight:600;color:var(--text);margin-bottom:12px;line-height:1.5;">${q.qText||'Question'}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;" id="srsOptions"></div>
+      <div id="srsAnswerReveal" style="display:none;margin-top:12px;"></div>
+    `;
+    renderSrsOptions(q);
+  }
+
+  srsSession.qStart = Date.now();
+}
+
+function renderSrsPdfPage(pdfId, pageNum){
+  const doc = window._srsPdfDocs?.[pdfId];
+  if(!doc) return;
+  const canvas = document.getElementById('srsPdfCanvas');
+  const infoEl = document.getElementById('srsPdfPageInfo');
+  if(!canvas) return;
+  if(infoEl) infoEl.textContent = `${pageNum} / ${doc.numPages}`;
+  doc.getPage(pageNum).then(page => {
+    const vp = page.getViewport({scale:1.5});
+    const dpr = window.devicePixelRatio||1;
+    canvas.width = vp.width*dpr; canvas.height = vp.height*dpr;
+    canvas.style.width = vp.width+'px'; canvas.style.height = vp.height+'px';
+    const ctx = canvas.getContext('2d');
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    page.render({canvasContext:ctx, viewport:vp});
+  }).catch(()=>{});
+}
+
+function srsPdfPrev(){
+  const q = srsSession.queue[srsSession.current];
+  if(!q?.isPdf) return;
+  const doc = window._srsPdfDocs?.[q.pdfId];
+  if(!doc) return;
+  srsSession.pdfPage = Math.max(1, (srsSession.pdfPage||q.pageNum)-1);
+  renderSrsPdfPage(q.pdfId, srsSession.pdfPage);
+}
+
+function srsPdfNext(){
+  const q = srsSession.queue[srsSession.current];
+  if(!q?.isPdf) return;
+  const doc = window._srsPdfDocs?.[q.pdfId];
+  if(!doc) return;
+  srsSession.pdfPage = Math.min(doc.numPages, (srsSession.pdfPage||q.pageNum)+1);
+  renderSrsPdfPage(q.pdfId, srsSession.pdfPage);
+}
+
+let srsSelectedAns = '';
+
+function renderSrsOptions(q){
+  const el = document.getElementById('srsOptions');
+  if(!el) return;
+  srsSelectedAns = '';
+  el.innerHTML = ['A','B','C','D'].map(k=>`
+    <button onclick="srsTapOption('${k}')" id="srsOpt_${k}" style="padding:10px;border-radius:10px;border:2px solid var(--border);background:var(--s2);color:var(--text);font-size:0.82rem;font-weight:600;cursor:pointer;text-align:left;transition:all .15s;">
+      <span style="font-weight:800;color:var(--acc);">${k}.</span> ${q.options?.[k]||k}
+    </button>`).join('');
+}
+
+function srsTapOption(opt){
+  const q = srsSession.queue[srsSession.current];
+  if(srsSelectedAns) return; // already answered
+  srsSelectedAns = opt;
+  
+  const corrects = q.correct ? q.correct.split(',') : [];
+  const isCorrect = corrects.includes(opt);
+  
+  // Color all options
+  ['A','B','C','D'].forEach(k=>{
+    const btn = document.getElementById('srsOpt_'+k);
+    if(!btn) return;
+    if(corrects.includes(k)){
+      btn.style.background='rgba(16,185,129,.15)';
+      btn.style.borderColor='var(--green)';
+      btn.style.color='var(--green)';
+    } else if(k===opt && !isCorrect){
+      btn.style.background='rgba(239,68,68,.12)';
+      btn.style.borderColor='var(--red)';
+      btn.style.color='var(--red)';
+    }
+  });
+  
+  // Show explanation + quality buttons
+  const revealEl = document.getElementById('srsAnswerReveal');
+  if(revealEl){
+    revealEl.style.display='block';
+    revealEl.innerHTML = `
+      ${q.explanation ? `<div style="font-size:0.78rem;color:var(--muted);padding:8px 10px;background:var(--s2);border-radius:8px;margin-bottom:10px;">💡 ${q.explanation}</div>` : ''}
+      <div style="font-size:0.72rem;font-weight:700;color:var(--muted);margin-bottom:6px;">How well did you know this?</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+        <button onclick="srsRate(0)" style="padding:10px;border-radius:10px;border:none;background:rgba(239,68,68,.15);color:var(--red);font-weight:800;font-size:0.8rem;cursor:pointer;">😰 Wrong<br><span style="font-size:0.65rem;font-weight:600;">Again tomorrow</span></button>
+        <button onclick="srsRate(1)" style="padding:10px;border-radius:10px;border:none;background:rgba(245,158,11,.1);color:var(--gold);font-weight:800;font-size:0.8rem;cursor:pointer;">😅 Hard<br><span style="font-size:0.65rem;font-weight:600;">Review soon</span></button>
+        <button onclick="srsRate(2)" style="padding:10px;border-radius:10px;border:none;background:rgba(16,185,129,.12);color:var(--green);font-weight:800;font-size:0.8rem;cursor:pointer;">😊 Good<br><span style="font-size:0.65rem;font-weight:600;">+${srsNextInterval(srsSession.queue[srsSession.current].id, 2)}d</span></button>
+        <button onclick="srsRate(3)" style="padding:10px;border-radius:10px;border:none;background:rgba(79,127,255,.12);color:#4f7fff;font-weight:800;font-size:0.8rem;cursor:pointer;">🚀 Easy<br><span style="font-size:0.65rem;font-weight:600;">+${srsNextInterval(srsSession.queue[srsSession.current].id, 3)}d</span></button>
+      </div>`;
+  }
+}
+
+function srsNextInterval(id, quality){
+  let s = srsData[id] ? {...srsData[id]} : {interval:1, ease:2.5, reps:0};
+  if(quality===0) return 1;
+  s.reps++;
+  if(s.reps===1) s.interval=1;
+  else if(s.reps===2) s.interval=3;
+  else s.interval = Math.round(s.interval * s.ease);
+  return s.interval;
+}
+
+function srsRate(quality){
+  const q = srsSession.queue[srsSession.current];
+  const timeSpent = Math.round((Date.now() - srsSession.qStart)/1000);
+  srsUpdateCard(q.id, quality);
+  srsSession.results.push({id:q.id, quality, timeSpent, correct: quality>=2});
+  srsSession.current++;
+  saveSrsData();
+  setTimeout(()=>renderSrsCard(), 300);
+}
+
+function finishSrsSession(){
+  const {results, startTime} = srsSession;
+  const correct = results.filter(r=>r.correct).length;
+  const pct = Math.round(correct/results.length*100);
+  const totalTime = Math.round((Date.now()-startTime)/1000);
+  const mins = Math.floor(totalTime/60), secs = totalTime%60;
+  const col = pct>=75?'var(--green)':pct>=50?'var(--gold)':'var(--red)';
+  
+  document.getElementById('srsQBody').innerHTML='';
+  document.getElementById('srsProgress').style.width='100%';
+  document.getElementById('srsCounter').textContent='Done!';
+  
+  document.getElementById('srsFinish').innerHTML = `
+    <div style="text-align:center;padding:16px 0;">
+      <div style="font-size:3rem;margin-bottom:8px;">${pct>=75?'🎉':pct>=50?'👍':'💪'}</div>
+      <div style="font-size:1.8rem;font-weight:800;color:${col};">${pct}%</div>
+      <div style="font-size:0.82rem;color:var(--muted);margin-top:4px;">${correct}/${results.length} correct · ⏱️ ${mins>0?mins+'m ':''}${secs}s</div>
+      <div style="display:flex;gap:8px;justify-content:center;margin-top:12px;flex-wrap:wrap;">
+        <span style="font-size:0.75rem;padding:4px 10px;background:rgba(16,185,129,.1);border:1px solid var(--green);border-radius:7px;color:var(--green);">😊 ${results.filter(r=>r.quality===2).length} Good</span>
+        <span style="font-size:0.75rem;padding:4px 10px;background:rgba(239,68,68,.1);border:1px solid var(--red);border-radius:7px;color:var(--red);">😰 ${results.filter(r=>r.quality===0).length} Wrong</span>
+        <span style="font-size:0.75rem;padding:4px 10px;background:rgba(79,127,255,.1);border:1px solid #4f7fff;border-radius:7px;color:#4f7fff;">🚀 ${results.filter(r=>r.quality===3).length} Easy</span>
+      </div>
+      <div style="margin-top:14px;font-size:0.78rem;color:var(--muted);">Next review scheduled! 🧠</div>
+      <button onclick="closePopup('srsPopup');renderPracticeSets();" style="margin-top:14px;width:100%;padding:12px;background:linear-gradient(135deg,#7c3aed,#4f7fff);color:#fff;border:none;border-radius:10px;font-size:0.9rem;font-weight:800;cursor:pointer;">✅ Done</button>
+    </div>`;
+  document.getElementById('srsFinish').style.display='block';
+  document.getElementById('srsQBody').style.display='none';
+}
+
 function renderPracticeSets(){
   const el = document.getElementById('practiceSetsSection');
   if(!el) return;
@@ -1404,6 +2021,41 @@ function renderPracticeSets(){
   const total = questions.length;
   const subjectColors = ['#4f7fff','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#f97316','#ec4899'];
   function getColor(i){ return subjectColors[i % subjectColors.length]; }
+
+  // Smart Review card — async PDF count
+  const due = srsDueToday();
+  const bankNew = srsNewCards().slice(0,5);
+  const totalDue = due.length;
+  const urgencyColor = totalDue>10?'#ef4444':totalDue>0?'#f59e0b':'#10b981';
+  const urgencyBg = totalDue>10?'rgba(239,68,68,.08)':totalDue>0?'rgba(245,158,11,.06)':'rgba(16,185,129,.06)';
+
+  const srsCard = questions.length ? `
+  <div style="margin-bottom:4px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+      <div style="font-size:0.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;">🧠 Smart Review</div>
+      <div style="display:flex;gap:4px;">
+        <button onclick="openNotifSettings()" style="background:none;border:none;color:${notifSettings.enabled?'var(--gold)':'var(--muted)'};font-size:1rem;cursor:pointer;padding:2px 6px;" title="Notifications">${notifSettings.enabled?'🔔':'🔕'}</button>
+        <button onclick="openSrsSettings()" style="background:none;border:none;color:var(--muted);font-size:1rem;cursor:pointer;padding:2px 6px;" title="Settings">⚙️</button>
+      </div>
+    </div>
+    <div onclick="startSmartReview()" style="border-radius:14px;border:2px solid ${urgencyColor}44;background:${urgencyBg};padding:14px 16px;cursor:pointer;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div style="width:50px;height:50px;border-radius:12px;background:linear-gradient(135deg,#7c3aed,#4f7fff);display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0;">🧠</div>
+        <div style="flex:1;">
+          <div style="font-size:0.9rem;font-weight:800;color:var(--text);">Smart Review</div>
+          <div style="font-size:0.72rem;color:var(--muted);margin-top:1px;">Spaced Repetition · Remember more!</div>
+          <div style="display:flex;gap:5px;margin-top:6px;flex-wrap:wrap;" id="srsCountChips">
+            ${totalDue>0?`<span style="font-size:0.7rem;font-weight:700;padding:2px 7px;background:${urgencyColor}22;border:1px solid ${urgencyColor}66;border-radius:5px;color:${urgencyColor};">⏰ ${totalDue} due</span>`:''}
+            ${bankNew.length>0?`<span style="font-size:0.7rem;font-weight:700;padding:2px 7px;background:rgba(79,127,255,.1);border:1px solid #4f7fff66;border-radius:5px;color:#4f7fff;">✨ ${bankNew.length} new</span>`:''}
+            <span id="srsLoadingChip" style="font-size:0.7rem;color:var(--muted);">Loading PDF...</span>
+          </div>
+        </div>
+        <div style="background:linear-gradient(135deg,#7c3aed,#4f7fff);color:#fff;border-radius:9px;padding:8px 14px;font-size:0.82rem;font-weight:800;flex-shrink:0;">▶ Start</div>
+      </div>
+      ${totalDue>0?`<div style="margin-top:10px;background:rgba(0,0,0,.15);border-radius:4px;height:3px;"><div style="background:${urgencyColor};height:3px;border-radius:4px;width:${Math.min(100,totalDue*3)}%;"></div></div>`:''}
+    </div>
+    <div style="height:1px;background:var(--border);margin:12px 0 10px;"></div>
+  </div>` : '';
 
   const allCard = total ? `
     <div onclick="startPracticeSet('all')" style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;border:2px solid #4f7fff;background:rgba(79,127,255,.08);margin-bottom:8px;cursor:pointer;">
@@ -1432,6 +2084,7 @@ function renderPracticeSets(){
 
   el.innerHTML = `
     <div style="padding:0 4px 4px;">
+      ${srsCard}
       <div style="font-size:0.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">🎯 Practice Sets</div>
       ${allCard}${subCards}
       <div id="pdfPracticeCards"></div>
@@ -1439,24 +2092,73 @@ function renderPracticeSets(){
       <div style="font-size:0.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">📋 Question Bank</div>
     </div>`;
 
-  // Load PDF cards async
-  loadPdfMeta().then(pdfList=>{
+  // Load PDF cards async + update SRS chip
+  loadPdfMeta().then(async pdfList=>{
     const pdfEl = document.getElementById('pdfPracticeCards');
     if(!pdfEl || !pdfList.length) return;
     pdfEl.innerHTML = pdfList.map((p,i)=>{
       const col = getColor(subs.length + i);
       const answered = Object.keys(p.ansKey||{}).length;
       return `
-      <div onclick="startPdfPractice(${p.id})" style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;border:2px solid ${col}33;background:${col}0d;margin-bottom:8px;cursor:pointer;">
-        <div style="width:44px;height:44px;border-radius:10px;background:${col}22;border:1.5px solid ${col}44;display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0;">📄</div>
-        <div style="flex:1;min-width:0;">
-          <div style="font-size:0.88rem;font-weight:800;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.name}</div>
-          <div style="font-size:0.72rem;color:var(--muted);margin-top:2px;">${answered} answers marked · PDF Test</div>
+      <div onclick="startPdfPractice(${p.id})" style="display:flex;flex-direction:column;gap:6px;padding:12px 14px;border-radius:12px;border:2px solid ${col}33;background:${col}0d;margin-bottom:8px;cursor:pointer;">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="width:44px;height:44px;border-radius:10px;background:${col}22;border:1.5px solid ${col}44;display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0;">📄</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:0.88rem;font-weight:800;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.name}</div>
+            <div style="font-size:0.72rem;color:var(--muted);margin-top:2px;">${answered} answers marked</div>
+          </div>
+          <div style="background:${col};color:#fff;border-radius:8px;padding:6px 14px;font-size:0.8rem;font-weight:800;flex-shrink:0;">▶ Practice</div>
         </div>
-        <div style="background:${col};color:#fff;border-radius:8px;padding:6px 14px;font-size:0.8rem;font-weight:800;">▶ Practice</div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;">${pdfStatsHTML(p.id)}</div>
       </div>`;
     }).join('');
+
+    // Update SRS chip with PDF new count
+    const pdfNewCards = await getPdfSrsNewCards();
+    const pdfDue = Object.keys(srsData).filter(id=>id.startsWith('pdf_')&&srsData[id].dueDate<=srsToday()).length;
+    const chipEl = document.getElementById('srsLoadingChip');
+    const chipsEl = document.getElementById('srsCountChips');
+    if(chipEl) chipEl.remove();
+    if(chipsEl && pdfNewCards.length>0){
+      const chip = document.createElement('span');
+      chip.style.cssText='font-size:0.7rem;font-weight:700;padding:2px 7px;background:rgba(139,92,246,.1);border:1px solid rgba(139,92,246,.5);border-radius:5px;color:#8b5cf6;';
+      chip.textContent=`📄 ${pdfNewCards.length+pdfDue} PDF`;
+      chipsEl.appendChild(chip);
+    }
+    if(chipsEl && chipsEl.children.length===0){
+      const chip = document.createElement('span');
+      chip.style.cssText='font-size:0.7rem;font-weight:700;padding:2px 7px;background:rgba(16,185,129,.1);border:1px solid #10b98166;border-radius:5px;color:#10b981;';
+      chip.textContent='✅ All caught up!';
+      chipsEl.appendChild(chip);
+    }
   }).catch(()=>{});
+}
+
+function getPdfStats(pdfId){
+  const pdfTests = testHistory.filter(h=>h.isPdf && h.pdfId===pdfId);
+  const practiceCount = pdfTests.length;
+  if(!practiceCount) return {practiceCount:0, avgScore:null, bestScore:null, weakQs:[]};
+  const avgScore = Math.round(pdfTests.reduce((s,h)=>s+h.pct,0)/practiceCount);
+  const bestScore = Math.max(...pdfTests.map(h=>h.pct));
+  const qWrong = {};
+  pdfTests.forEach(h=>{
+    (h.details||[]).forEach((d,i)=>{
+      if(!d.skipped && !d.correctFlag) qWrong[i+1]=(qWrong[i+1]||0)+1;
+    });
+  });
+  const weakQs = Object.entries(qWrong).filter(([,c])=>c>=2).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  return {practiceCount, avgScore, bestScore, weakQs};
+}
+
+function pdfStatsHTML(pdfId, col='var(--muted)'){
+  const {practiceCount, avgScore, bestScore, weakQs} = getPdfStats(pdfId);
+  const scoreColor = avgScore===null?'var(--muted)':avgScore>=75?'var(--green)':avgScore>=50?'var(--gold)':'var(--red)';
+  if(!practiceCount) return `<span style="font-size:0.68rem;color:var(--muted);padding:2px 7px;background:var(--s1);border-radius:5px;border:1px solid var(--border);">🎯 Not practiced yet</span>`;
+  return `
+    <span style="font-size:0.68rem;font-weight:700;padding:2px 7px;background:var(--s1);border-radius:5px;border:1px solid var(--border);color:var(--muted);">🔁 ${practiceCount}x</span>
+    <span style="font-size:0.68rem;font-weight:700;padding:2px 7px;background:var(--s1);border-radius:5px;border:1px solid ${scoreColor};color:${scoreColor};">📊 ${avgScore}%</span>
+    <span style="font-size:0.68rem;font-weight:700;padding:2px 7px;background:var(--s1);border-radius:5px;border:1px solid var(--green);color:var(--green);">🏆 ${bestScore}%</span>
+    ${weakQs.length?weakQs.slice(0,3).map(([q,c])=>`<span style="font-size:0.65rem;padding:2px 6px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:5px;color:var(--red);font-weight:700;">Q${q}(${c}✗)</span>`).join(''):''}`;
 }
 
 async function startPdfPractice(pdfId){
@@ -1736,28 +2438,98 @@ function catPopupCancel(){
 }
 
 /* ===== EXPORT / IMPORT ===== */
-function exportQ(){
+async function exportQ(){
   if(!questions.length){toast('No questions','error');return;}
   const date = new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'2-digit'}).replace(/ /g,'-');
-  const a=document.createElement('a');
-  a.href='data:application/json,'+encodeURIComponent(JSON.stringify(questions,null,2));
-  a.download=`SmartMock_Backup_${date}.json`;a.click();
+  let pdfMeta = [];
+  try{ pdfMeta = await loadPdfMeta(); }catch(e){}
+  const data = JSON.stringify({
+    version: 2,
+    date: new Date().toISOString(),
+    questions,
+    pdfMeta,
+    testHistory: testHistory || [],
+    homeAnsKey: homeAnsKey || {}
+  }, null, 2);
+  const a = document.createElement('a');
+  a.href = 'data:application/json,' + encodeURIComponent(data);
+  a.download = `SmartMock_Backup_${date}.json`;
+  a.click();
   localStorage.setItem('smt_backup_count', questions.length);
   localStorage.setItem('smt_backup_time', Date.now());
   toast('✅ Exported!','success');
 }
 function importQ(){
   const inp=document.createElement('input');inp.type='file';inp.accept='.json';
-  inp.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{const d=JSON.parse(ev.target.result);questions=[...questions,...d];save();toast(`✅ ${d.length} imported!`,'success');}catch(e){toast('Invalid file','error');}};r.readAsText(f);};
+  inp.onchange=e=>{
+    const f=e.target.files[0];if(!f)return;
+    const r=new FileReader();
+    r.onload=ev=>{
+      try{
+        const d=JSON.parse(ev.target.result);
+        // Version 2 format
+        if(d.version===2){
+          if(d.questions&&d.questions.length){
+            questions=[...questions,...d.questions];
+            save();
+          }
+          if(d.testHistory&&d.testHistory.length){
+            testHistory=[...d.testHistory,...testHistory];
+            testHistory=testHistory.slice(0,50);
+            try{localStorage.setItem('smt_history',JSON.stringify(testHistory));}catch(e){}
+          }
+          if(d.homeAnsKey) homeAnsKey={...homeAnsKey,...d.homeAnsKey};
+          if(d.srsData){ srsData={...srsData,...d.srsData}; saveSrsData(); }
+          if(d.pdfMeta&&d.pdfMeta.length){
+            toast(`✅ Imported! ${d.questions?.length||0} questions, ${d.pdfMeta.length} PDF records, ${d.testHistory?.length||0} history`,'success');
+          } else {
+            toast(`✅ Imported! ${d.questions?.length||0} questions, ${d.testHistory?.length||0} history`,'success');
+          }
+        } else {
+          // Old format — just questions array
+          const arr = Array.isArray(d) ? d : [];
+          questions=[...questions,...arr];
+          save();
+          toast(`✅ ${arr.length} imported!`,'success');
+        }
+        renderProgressPage();
+      }catch(e){toast('Invalid file','error');}
+    };
+    r.readAsText(f);
+  };
+  inp.click();
   inp.click();
 }
 
 /* ===== EXAM ===== */
 function shuffle(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;}
 
+function updatePdfMaxMarks(){
+  const q = parseInt(document.getElementById('tPdfNum')?.value)||10;
+  const mc = parseFloat(document.getElementById('pdfMarkCorrect')?.value||1);
+  const mw = parseFloat(document.getElementById('pdfMarkWrong')?.value||0);
+  const el = document.getElementById('pdfMaxMarksInfo');
+  if(el) el.textContent = `Max Marks = ${q} × ${mc} = ${(q*mc).toFixed(1)}${mw>0?' | Negative: -'+mw+' per wrong':''}`;
+}
+
+function toggleNegMark(){
+  const en = document.getElementById('negMarkEnable').checked;
+  const val = document.getElementById('negMarkVal');
+  if(val) val.style.display = en ? 'flex' : 'none';
+}
+function togglePdfNegMark(){
+  const en = document.getElementById('pdfNegMarkEnable').checked;
+  const val = document.getElementById('pdfNegMarkVal');
+  if(val) val.style.display = en ? 'flex' : 'none';
+}
+
 function startBankTest(){
   isPdfOnlyTest = false;
   testPdfData = null;
+  const mw = parseFloat(document.getElementById('negMarkAmt')?.value || 0);
+  negMarkEnabled = document.getElementById('negMarkEnable')?.checked || false;
+  negMarkAmt = negMarkEnabled ? mw : 0;
+  markCorrectVal = 1; // bank test always 1 mark per question
   startExam();
 }
 
@@ -1776,16 +2548,22 @@ async function updatePdfTestStatus(){
 
   el.innerHTML = `
     <div style="font-size:0.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Select PDF</div>
-    ${pdfList.map(p=>`
-      <div onclick="selectTestPdf(${p.id})" id="pdfitem_${p.id}" style="display:flex;align-items:center;gap:10px;padding:10px 13px;border-radius:9px;border:2px solid ${testPdfData&&selectedPdfId===p.id?'var(--red)':'var(--border)'};background:${testPdfData&&selectedPdfId===p.id?'rgba(239,68,68,.1)':'var(--s2)'};margin-bottom:8px;cursor:pointer;position:relative;">
-        <span style="font-size:1.3rem;">📄</span>
-        <div style="flex:1;overflow:hidden;">
-          <div style="font-size:0.82rem;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.name}</div>
-          <div style="font-size:0.68rem;color:var(--muted);">${Object.keys(p.ansKey||{}).length} answers marked · ${p.added}</div>
+    ${pdfList.map(p=>{
+      return `
+      <div onclick="selectTestPdf(${p.id})" id="pdfitem_${p.id}" style="display:flex;flex-direction:column;gap:6px;padding:10px 13px;border-radius:9px;border:2px solid ${testPdfData&&selectedPdfId===p.id?'var(--red)':'var(--border)'};background:${testPdfData&&selectedPdfId===p.id?'rgba(239,68,68,.1)':'var(--s2)'};margin-bottom:8px;cursor:pointer;position:relative;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span style="font-size:1.3rem;">📄</span>
+          <div style="flex:1;overflow:hidden;">
+            <div style="font-size:0.82rem;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.name}</div>
+            <div style="font-size:0.68rem;color:var(--muted);">${Object.keys(p.ansKey||{}).length} answers · ${p.added}</div>
+          </div>
+          <button onclick="event.stopPropagation();togglePdfMenu(${p.id})" style="background:none;border:none;color:var(--muted);font-size:1.2rem;cursor:pointer;padding:4px 8px;line-height:1;">⋮</button>
         </div>
-        <button onclick="event.stopPropagation();togglePdfMenu(${p.id})" style="background:none;border:none;color:var(--muted);font-size:1.2rem;cursor:pointer;padding:4px 8px;line-height:1;">⋮</button>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;">${pdfStatsHTML(p.id)}</div>
         <div id="pdfmenu_${p.id}" style="display:none;position:absolute;right:8px;top:38px;background:var(--s3);border:1px solid var(--border);border-radius:10px;z-index:100;min-width:130px;box-shadow:0 4px 20px rgba(0,0,0,.4);overflow:hidden;">
           <div onclick="event.stopPropagation();editPdfQCount(${p.id})" style="padding:12px 16px;font-size:0.85rem;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px;">✏️ Edit</div>
+          <div style="height:1px;background:var(--border);"></div>
+          <div onclick="event.stopPropagation();showPdfStats(${p.id})" style="padding:12px 16px;font-size:0.85rem;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px;">📊 Stats</div>
           <div style="height:1px;background:var(--border);"></div>
           <div onclick="event.stopPropagation();viewTestPdf(${p.id})" style="padding:12px 16px;font-size:0.85rem;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px;">👁️ View</div>
           <div style="height:1px;background:var(--border);"></div>
@@ -1793,8 +2571,8 @@ async function updatePdfTestStatus(){
           <div style="height:1px;background:var(--border);"></div>
           <div onclick="event.stopPropagation();deleteTestPdf(${p.id})" style="padding:12px 16px;font-size:0.85rem;font-weight:600;color:var(--red);cursor:pointer;display:flex;align-items:center;gap:8px;">🗑️ Delete</div>
         </div>
-      </div>
-    `).join('')}
+      </div>`;
+    }).join('')}
   `;
 }
 
@@ -1809,6 +2587,25 @@ async function selectTestPdf(id){
     if(data && item){
       testPdfData = data;
       homeAnsKey = item.ansKey || {};
+
+      // Auto-fill marking scheme from saved PDF settings
+      const mc = item.markCorrect ?? 1;
+      const mw = item.markWrong ?? 0;
+      const qCount = item.qCount || Object.keys(item.ansKey||{}).length || 10;
+
+      const mcEl = document.getElementById('pdfMarkCorrect');
+      const mwEl = document.getElementById('pdfMarkWrong');
+      if(mcEl) mcEl.value = mc;
+      if(mwEl) mwEl.value = mw;
+
+      // Show saved scheme info
+      const infoEl = document.getElementById('pdfSavedMarkInfo');
+      const maxEl = document.getElementById('pdfMaxMarksInfo');
+      if(infoEl){
+        infoEl.style.display = 'block';
+        infoEl.innerHTML = `📄 <b>${item.name}</b> — Saved: +${mc} correct, ${mw>0?'-'+mw+' wrong':'no negative'}`;
+      }
+      if(maxEl) maxEl.textContent = `Max Marks = ${qCount} × ${mc} = ${(qCount*mc).toFixed(1)}`;
     }
   } catch(e){}
   updatePdfTestStatus();
@@ -1829,6 +2626,57 @@ document.addEventListener('click', ()=>{
   document.querySelectorAll('[id^="qmenu_"]').forEach(m=>m.style.display='none');
   document.querySelectorAll('[id^="histmenu_"]').forEach(m=>m.style.display='none');
 });
+
+async function showPdfStats(id){
+  document.querySelectorAll('[id^="pdfmenu_"]').forEach(m=>m.style.display='none');
+  try {
+    const pdfList = await loadPdfMeta();
+    const p = pdfList.find(x=>x.id===id);
+    if(!p) return;
+    const {practiceCount, avgScore, bestScore, weakQs} = getPdfStats(id);
+    const pdfTests = testHistory.filter(h=>h.isPdf && h.pdfId===id);
+    const scoreColor = avgScore===null?'var(--muted)':avgScore>=75?'var(--green)':avgScore>=50?'var(--gold)':'var(--red)';
+
+    document.getElementById('pdfStatsTitle').textContent = p.name;
+    document.getElementById('pdfStatsBody').innerHTML = practiceCount===0
+      ? `<div style="text-align:center;padding:24px;color:var(--muted);font-size:0.85rem;">🎯 Not practiced yet<br><br>Practice this PDF to see stats!</div>`
+      : `
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;">
+          <div style="background:var(--s2);border-radius:10px;padding:12px;text-align:center;">
+            <div style="font-size:1.4rem;font-weight:800;color:var(--muted);">${practiceCount}</div>
+            <div style="font-size:0.68rem;color:var(--muted);margin-top:2px;">🔁 Practiced</div>
+          </div>
+          <div style="background:var(--s2);border-radius:10px;padding:12px;text-align:center;">
+            <div style="font-size:1.4rem;font-weight:800;color:${scoreColor};">${avgScore}%</div>
+            <div style="font-size:0.68rem;color:var(--muted);margin-top:2px;">📊 Average</div>
+          </div>
+          <div style="background:var(--s2);border-radius:10px;padding:12px;text-align:center;">
+            <div style="font-size:1.4rem;font-weight:800;color:var(--green);">${bestScore}%</div>
+            <div style="font-size:0.68rem;color:var(--muted);margin-top:2px;">🏆 Best</div>
+          </div>
+        </div>
+        ${weakQs.length ? `
+        <div style="margin-bottom:14px;">
+          <div style="font-size:0.72rem;font-weight:700;color:var(--red);margin-bottom:8px;">⚠️ Weak Questions (2+ wrong)</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;">
+            ${weakQs.map(([q,c])=>`<span style="padding:4px 10px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:7px;font-size:0.8rem;font-weight:700;color:var(--red);">Q${q} — ${c}✗ wrong</span>`).join('')}
+          </div>
+        </div>` : `<div style="color:var(--green);font-size:0.8rem;font-weight:700;margin-bottom:14px;">✅ No weak questions!</div>`}
+        <div style="font-size:0.72rem;font-weight:700;color:var(--muted);margin-bottom:8px;">📅 Recent Tests</div>
+        ${pdfTests.slice(0,5).map(h=>{
+          const col=h.pct>=75?'var(--green)':h.pct>=50?'var(--gold)':'var(--red)';
+          return `<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--s2);border-radius:8px;margin-bottom:6px;">
+            <span style="font-size:0.8rem;font-weight:800;color:${col};min-width:40px;">${h.pct}%</span>
+            <span style="font-size:0.75rem;color:var(--muted);flex:1;">${h.date}</span>
+            <span style="font-size:0.72rem;color:var(--green);">✅${h.c}</span>
+            <span style="font-size:0.72rem;color:var(--red);">❌${h.w}</span>
+            <span style="font-size:0.72rem;color:var(--gold);">⬜${h.s}</span>
+          </div>`;
+        }).join('')}`;
+
+    openPopup('pdfStatsPopup');
+  } catch(e){}
+}
 
 async function viewTestPdf(id){
   document.querySelectorAll('[id^="pdfmenu_"]').forEach(m=>m.style.display='none');
@@ -1887,6 +2735,10 @@ function startPdfTest(){
   }
   isPdfOnlyTest = true;
   pdfAnsKey = {};
+  const mw = parseFloat(document.getElementById('pdfMarkWrong')?.value || 0);
+  negMarkEnabled = mw > 0;
+  negMarkAmt = mw;
+  markCorrectVal = parseFloat(document.getElementById('pdfMarkCorrect')?.value || 1);
   startExam();
 }
 
@@ -2098,7 +2950,13 @@ function submitExam(ask){
     else if(a===q.correct) c++;
     else w++;
   });
-  const total=testQ.length,pct=Math.round(c/total*100);
+  const total=testQ.length;
+  // Marking scheme score
+  const rawScore = negMarkEnabled
+    ? Math.max(0, (c * markCorrectVal) - (w * negMarkAmt))
+    : c * markCorrectVal;
+  const maxScore = total * markCorrectVal;
+  const pct = Math.round(rawScore/maxScore*100);
 
   // Save to history
   const entry={
@@ -2134,6 +2992,17 @@ function submitExam(ask){
   document.getElementById('rGrade').textContent=g;document.getElementById('rMsg').textContent=m;
   document.getElementById('rsC').textContent=c;document.getElementById('rsW').textContent=w;
   document.getElementById('rsS').textContent=s;document.getElementById('rsT').textContent=total;
+  // Show negative marking info
+  const negInfoEl = document.getElementById('negMarkInfo');
+  if(negMarkEnabled && w > 0){
+    const deducted = (w * negMarkAmt).toFixed(2);
+    const gross = (c * markCorrectVal).toFixed(2);
+    if(negInfoEl) negInfoEl.innerHTML = `<div style="text-align:center;margin:6px 0;padding:8px 12px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:8px;font-size:0.78rem;color:var(--red);font-weight:700;">⚠️ +${gross} − ${deducted} = <span style="font-size:0.95rem;">${rawScore.toFixed(2)}</span> / ${maxScore.toFixed(0)} marks</div>`;
+  } else if(markCorrectVal !== 1){
+    if(negInfoEl) negInfoEl.innerHTML = `<div style="text-align:center;margin:6px 0;padding:8px 12px;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.3);border-radius:8px;font-size:0.78rem;color:var(--green);font-weight:700;">✅ Score: ${rawScore.toFixed(1)} / ${maxScore.toFixed(0)} marks (+${markCorrectVal} per correct)</div>`;
+  } else {
+    if(negInfoEl) negInfoEl.innerHTML = '';
+  }
   document.getElementById('reviewArea').style.display='none';
   document.getElementById('scrollBody').scrollTop=0;
 }
@@ -2785,10 +3654,13 @@ function reviewHistory(idx){
           ${h.details.map((d,i)=>{
             const col=d.skipped?'var(--gold)':d.correctFlag?'var(--green)':'var(--red)';
             const st=d.skipped?'⬜ Skip':d.correctFlag?'✅ Correct':'❌ Wrong';
+            const qt = h.qTimers?.[i] || 0;
+            const qm=Math.floor(qt/60), qs=qt%60;
+            const timeStr = qt>0 ? `⏱️ ${qm>0?qm+'m ':''}${qs}s${qt>90?' 🐢':''}` : '';
             return`<div onclick="histRevJump(${i+1})" style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:9px;border:1px solid var(--border);border-left:3px solid ${col};background:var(--s1);margin-bottom:6px;cursor:pointer;">
               <div style="width:32px;height:32px;border-radius:7px;background:${col}22;border:1.5px solid ${col};display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.8rem;color:${col};flex-shrink:0;">Q${i+1}</div>
               <div style="flex:1;">
-                <div style="font-size:0.72rem;font-weight:700;color:${col};">${st}</div>
+                <div style="font-size:0.72rem;font-weight:700;color:${col};">${st}${timeStr?` · <span style="color:var(--muted);font-weight:600;">${timeStr}</span>`:''}</div>
                 <div style="display:flex;gap:3px;margin-top:2px;">
                   ${['A','B','C','D'].map(op=>{
                     const isCorr=op===d.correct;
@@ -2827,8 +3699,12 @@ function reviewHistory(idx){
       const st=d.skipped?'⬜ Skip':d.correctFlag?'✅ Correct':'❌ Wrong';
       const corrects = d.correct ? d.correct.split(',') : [];
       const userSel  = d.userAnswer ? d.userAnswer.split(',') : [];
+      const qt = h.qTimers?.[i] || 0;
+      const qm=Math.floor(qt/60), qs=qt%60;
+      const timeStr = qt>0 ? `⏱️ ${qm>0?qm+'m ':''}${qs}s${qt>90?' 🐢':''}` : '';
       return`<div class="review-item ${cls}">
-        <div class="rv-st" style="color:${col}">${st} — Q.${i+1}${d.subject?` <span style="font-size:0.68rem;background:var(--s2);border:1px solid var(--border);border-radius:5px;padding:1px 6px;color:var(--muted);margin-left:4px;">${d.subject}</span>`:''}</div>
+        <div class="rv-st" style="color:${col}">${st} — Q.${i+1}${d.subject?` <span style="font-size:0.68rem;background:var(--s2);border:1px solid var(--border);border-radius:5px;padding:1px 6px;color:var(--muted);margin-left:4px;">${d.subject}</span>`:''} ${timeStr?`<span style="font-size:0.68rem;color:var(--muted);font-weight:600;margin-left:4px;">${timeStr}</span>`:''}
+        </div>
         ${d.image?`<img src="${d.image}" style="width:100%;max-height:220px;object-fit:contain;border-radius:10px;border:1px solid var(--border);background:#000;display:block;margin:6px 0;" onclick="openImgViewer('${d.image}')" />`:''}
         ${d.qText?`<div style="font-weight:600;font-size:0.85rem;margin-bottom:6px;">${d.qText}</div>`:''}
         ${d.options&&Object.keys(d.options).length?`<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:4px;">
@@ -3025,7 +3901,13 @@ function initHomePdf(dataUrl, name) {
   document.getElementById('homePdfEmpty').style.display = 'none';
   document.getElementById('homePdfViewer').style.display = 'block';
   document.getElementById('homePdfCard').style.display = 'block';
-  document.getElementById('homePdfName').textContent = name || 'PDF';
+  document.getElementById('homePdfName').textContent = '📄 ' + (name || 'PDF');
+  // Set custom name placeholder to file name (without extension)
+  const customNameEl = document.getElementById('homePdfCustomName');
+  if(customNameEl){
+    customNameEl.value = '';
+    customNameEl.placeholder = '✏️ Custom name — e.g. "GK Paper 2024"';
+  }
   document.getElementById('homePdfPageInfo').textContent = 'Loading...';
   ensurePdfJs(() => {
     const arr = dataUrlToUint8(dataUrl);
@@ -3054,6 +3936,8 @@ async function clearHomePdf() {
   document.getElementById('homePdfViewer').style.display = 'none';
   document.getElementById('homePdfCard').style.display = 'block';
   document.getElementById('homePdfCanvas').width = 0;
+  const cn = document.getElementById('homePdfCustomName');
+  if(cn) cn.value = '';
 }
 
 async function editPdfQCount(id){
@@ -3087,9 +3971,8 @@ async function useHomePdfInTest() {
     try {
       let pdfList = await loadPdfMeta();
       const idx = pdfList.findIndex(p=>p.id===editId);
-      if(idx>=0) pdfList[idx].ansKey = homeAnsKey;
+      if(idx>=0){ pdfList[idx].ansKey = homeAnsKey; pdfList[idx].qCount = homePdf.total; }
       await savePdfMeta(pdfList);
-      if(selectedPdfId===editId) {} // homeAnsKey already updated
     } catch(e){}
     window._editingPdfId = null;
     clearHomePdf();
@@ -3097,13 +3980,50 @@ async function useHomePdfInTest() {
     goPage('setup');
     return;
   }
+
+  // Check if same name PDF already exists → update instead of new entry
+  const customName = document.getElementById('homePdfCustomName')?.value.trim();
+  const displayName = customName || homePdf.name;
+
+  try {
+    let pdfList = await loadPdfMeta();
+    const existIdx = pdfList.findIndex(p=>p.fileName === homePdf.name || p.name === displayName);
+    if(existIdx >= 0){
+      const existing = pdfList[existIdx];
+      const hasKeys = Object.keys(existing.ansKey||{}).length;
+      if(hasKeys > 0){
+        const keep = confirm(`"${existing.name}" already exists with ${hasKeys} answers marked.\n\nOK = Keep old answer key\nCancel = Start fresh`);
+        if(keep) homeAnsKey = existing.ansKey;
+      }
+      await savePdfData(existing.id, homePdf.data);
+      pdfList[existIdx].name = displayName;
+      pdfList[existIdx].fileName = homePdf.name;
+      pdfList[existIdx].ansKey = homeAnsKey;
+      pdfList[existIdx].qCount = homePdf.total;
+      pdfList[existIdx].markCorrect = parseFloat(document.getElementById('homeMarkCorrect')?.value||1);
+      pdfList[existIdx].markWrong = parseFloat(document.getElementById('homeMarkWrong')?.value||0);
+      pdfList[existIdx].added = new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short'});
+      await savePdfMeta(pdfList);
+      clearHomePdf();
+      toast('✅ PDF updated — answer key restored!','success');
+      goPage('setup');
+      return;
+    }
+  } catch(e){}
+
   // New PDF — save to list
   try {
     let pdfList = await loadPdfMeta();
     const id = Date.now();
     await savePdfData(id, homePdf.data);
     pdfList.push({
-      id, name: homePdf.name, ansKey: homeAnsKey,
+      id,
+      name: displayName,
+      fileName: homePdf.name,
+      ansKey: homeAnsKey,
+      qCount: homePdf.total,
+      markCorrect: parseFloat(document.getElementById('homeMarkCorrect')?.value||1),
+      markWrong: parseFloat(document.getElementById('homeMarkWrong')?.value||0),
       added: new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short'})
     });
     await savePdfMeta(pdfList);
@@ -3180,10 +4100,12 @@ function initReviewPdfSplit(){
     const colMap={green:'var(--green)',red:'var(--red)',gold:'var(--gold)'};
     const col=colMap[cls];
     const st=!ua?'⬜ Skip':isC?'✅ Correct':'❌ Wrong';
+    const qt=qTimers[i]||0; const qm=Math.floor(qt/60),qs=qt%60;
+    const timeStr = qt>0 ? `⏱️ ${qm>0?qm+'m ':''}${qs}s${qt>90?' 🐢':''}` : '';
     return `<div onclick="reviewJumpToPage(${i+1})" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;border:1px solid var(--border);border-left:4px solid ${col};background:var(--s1);margin-bottom:8px;cursor:pointer;active:opacity(.7);">
       <div style="flex-shrink:0;width:36px;height:36px;border-radius:8px;background:${col}22;border:1.5px solid ${col};display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.85rem;color:${col};">Q${i+1}</div>
       <div style="flex:1;min-width:0;">
-        <div style="font-size:0.72rem;font-weight:700;color:${col};margin-bottom:2px;">${st}</div>
+        <div style="font-size:0.72rem;font-weight:700;color:${col};margin-bottom:2px;">${st}${timeStr?` · <span style="color:var(--muted);font-weight:600;">${timeStr}</span>`:''}</div>
         <div style="display:flex;gap:4px;flex-wrap:wrap;">
           ${['A','B','C','D'].map(op=>{
             const isCorr=op===q.correct;
@@ -3197,7 +4119,46 @@ function initReviewPdfSplit(){
       </div>
       <span style="color:var(--muted);font-size:0.85rem;">📄${i+1}</span>
     </div>`;
-  }).join('');
+  }).join('') + `<div style="text-align:center;padding:24px 16px 16px;">
+  <svg width="180" height="160" viewBox="0 0 180 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect width="180" height="160" rx="16" fill="#1a1f35"/>
+    <circle cx="20" cy="20" r="1.5" fill="#fff" opacity="0.8"/>
+    <circle cx="50" cy="12" r="1" fill="#fff" opacity="0.6"/>
+    <circle cx="80" cy="18" r="1.5" fill="#fff" opacity="0.9"/>
+    <circle cx="120" cy="10" r="1" fill="#fff" opacity="0.7"/>
+    <circle cx="155" cy="22" r="1.5" fill="#fff" opacity="0.8"/>
+    <circle cx="165" cy="8" r="1" fill="#fff" opacity="0.5"/>
+    <circle cx="35" cy="35" r="1" fill="#fff" opacity="0.6"/>
+    <circle cx="140" cy="35" r="1.5" fill="#fff" opacity="0.7"/>
+    <circle cx="148" cy="28" r="14" fill="#f0c040"/>
+    <circle cx="154" cy="22" r="11" fill="#1a1f35"/>
+    <ellipse cx="40" cy="148" rx="70" ry="30" fill="#1e3a2f"/>
+    <ellipse cx="150" cy="152" rx="60" ry="28" fill="#1a3328"/>
+    <rect x="18" y="108" width="5" height="22" rx="2" fill="#5c3d1e"/>
+    <ellipse cx="20" cy="100" rx="13" ry="16" fill="#2d6a4f"/>
+    <ellipse cx="14" cy="108" rx="9" ry="11" fill="#3a7a5a"/>
+    <ellipse cx="26" cy="106" rx="9" ry="12" fill="#2d6a4f"/>
+    <rect x="148" y="112" width="5" height="20" rx="2" fill="#5c3d1e"/>
+    <ellipse cx="150" cy="104" rx="12" ry="15" fill="#2d6a4f"/>
+    <ellipse cx="144" cy="111" rx="8" ry="10" fill="#3a7a5a"/>
+    <ellipse cx="156" cy="109" rx="8" ry="11" fill="#2d6a4f"/>
+    <ellipse cx="90" cy="130" rx="22" ry="8" fill="#25503c"/>
+    <rect x="83" y="108" width="14" height="20" rx="7" fill="#4f7fff"/>
+    <circle cx="90" cy="100" r="10" fill="#f5c89a"/>
+    <ellipse cx="90" cy="93" rx="10" ry="6" fill="#3d2b1f"/>
+    <path d="M85 100 Q87 98 89 100" stroke="#3d2b1f" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    <path d="M91 100 Q93 98 95 100" stroke="#3d2b1f" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    <path d="M86 104 Q90 108 94 104" stroke="#3d2b1f" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    <path d="M83 115 Q74 120 70 118" stroke="#4f7fff" stroke-width="5" stroke-linecap="round"/>
+    <path d="M97 115 Q106 120 110 118" stroke="#4f7fff" stroke-width="5" stroke-linecap="round"/>
+    <path d="M86 128 Q82 135 80 138" stroke="#2d3a6b" stroke-width="5" stroke-linecap="round"/>
+    <path d="M94 128 Q98 135 100 138" stroke="#2d3a6b" stroke-width="5" stroke-linecap="round"/>
+    <text x="108" y="90" font-size="10" fill="#f0c040" opacity="0.9">✦</text>
+    <text x="62" y="88" font-size="8" fill="#f0c040" opacity="0.7">✦</text>
+    <text x="115" y="105" font-size="6" fill="#fff" opacity="0.8">★</text>
+  </svg>
+  <div style="font-size:0.82rem;color:#7a8ab0;margin-top:10px;font-weight:600;letter-spacing:.3px;">You did it! Take a breath 🌙</div>
+</div>`;
 
   // Load PDF
   reviewPdf = {doc:null, page:1, total:1, rendering:false};
@@ -3486,7 +4447,7 @@ function dismissBanner(){
 // Register Service Worker for offline support
 if('serviceWorker' in navigator){
   const swCode = `
-const CACHE='smartmock-v1';
+const CACHE='smartmock-v3';
 const ASSETS=[self.location.href||'/'];
 self.addEventListener('install',e=>{
   e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting()));
@@ -3497,10 +4458,160 @@ self.addEventListener('activate',e=>{
 self.addEventListener('fetch',e=>{
   e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).catch(()=>caches.match(e.request))));
 });
+self.addEventListener('notificationclick',e=>{
+  e.notification.close();
+  e.waitUntil(clients.matchAll({type:'window'}).then(cs=>{
+    if(cs.length) cs[0].focus();
+    else clients.openWindow(self.location.origin);
+  }));
+});
+self.addEventListener('push',e=>{
+  const data = e.data ? e.data.json() : {title:'SmartMock',body:'Review time!'};
+  e.waitUntil(self.registration.showNotification(data.title,{body:data.body,icon:'/favicon.ico',badge:'/favicon.ico',tag:'smartmock-review',renotify:true}));
+});
   `;
   const blob = new Blob([swCode],{type:'text/javascript'});
   const swUrl = URL.createObjectURL(blob);
-  navigator.serviceWorker.register(swUrl).catch(()=>{});
+  navigator.serviceWorker.register(swUrl).then(reg=>{
+    window._swReg = reg;
+  }).catch(()=>{});
+}
+
+/* ===== NOTIFICATION SYSTEM ===== */
+let notifSettings = { enabled: false, time: '08:00' };
+
+async function loadNotifSettings(){
+  try {
+    const s = await dbMiscGet('notif_settings');
+    if(s) notifSettings = {...notifSettings, ...s};
+  } catch(e){}
+  try {
+    const s = localStorage.getItem('notif_settings');
+    if(s) notifSettings = {...notifSettings, ...JSON.parse(s)};
+  } catch(e){}
+}
+
+async function saveNotifSettings(){
+  try { await dbMiscSet('notif_settings', notifSettings); } catch(e){}
+  try { localStorage.setItem('notif_settings', JSON.stringify(notifSettings)); } catch(e){}
+}
+
+async function requestNotifPermission(){
+  if(!('Notification' in window)){ toast('Notifications not supported on this browser','error'); return false; }
+  if(Notification.permission === 'granted') return true;
+  const perm = await Notification.requestPermission();
+  return perm === 'granted';
+}
+
+async function enableNotifications(){
+  const granted = await requestNotifPermission();
+  if(!granted){
+    toast('❌ Permission denied — enable in browser settings','error');
+    document.getElementById('notifToggle').checked = false;
+    return;
+  }
+  notifSettings.enabled = true;
+  await saveNotifSettings();
+  scheduleNotifCheck();
+  toast('🔔 Notifications enabled!','success');
+}
+
+async function disableNotifications(){
+  notifSettings.enabled = false;
+  await saveNotifSettings();
+  toast('🔕 Notifications disabled','success');
+}
+
+function scheduleNotifCheck(){
+  // Check every minute if it's time to notify
+  if(window._notifInterval) clearInterval(window._notifInterval);
+  window._notifInterval = setInterval(checkAndNotify, 60000);
+  checkAndNotify(); // also check immediately
+}
+
+function checkAndNotify(){
+  if(!notifSettings.enabled) return;
+  if(Notification.permission !== 'granted') return;
+
+  const now = new Date();
+  const [h,m] = (notifSettings.time||'08:00').split(':').map(Number);
+  const isTime = now.getHours()===h && now.getMinutes()===m;
+
+  // Also check if last notif was today
+  const lastNotif = localStorage.getItem('smt_last_notif');
+  const today = new Date().toISOString().slice(0,10);
+  if(lastNotif === today) return;
+
+  if(isTime || (notifSettings.testMode)){
+    const due = srsDueToday().length;
+    const bankNew = srsNewCards().slice(0, srsSettings.newBankPerDay).length;
+    const total = due + bankNew;
+    if(total > 0){
+      showNotification(due, total);
+      localStorage.setItem('smt_last_notif', today);
+    }
+  }
+}
+
+function showNotification(due, total){
+  if(Notification.permission !== 'granted') return;
+  const msg = due > 0
+    ? `⏰ ${due} cards due for review + ${total-due} new cards`
+    : `✨ ${total} new cards ready to learn`;
+  try {
+    if(window._swReg){
+      window._swReg.showNotification('🧠 SmartMock — Review Time!', {
+        body: msg,
+        icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🧠</text></svg>',
+        tag: 'smartmock-review',
+        renotify: true,
+        requireInteraction: false
+      });
+    } else {
+      new Notification('🧠 SmartMock — Review Time!', { body: msg });
+    }
+  } catch(e){}
+}
+
+function openNotifSettings(){
+  document.getElementById('notifToggle').checked = notifSettings.enabled;
+  document.getElementById('notifTime').value = notifSettings.time || '08:00';
+  updateNotifStatus();
+  openPopup('notifSettingsPopup');
+}
+
+function updateNotifStatus(){
+  const el = document.getElementById('notifPermStatus');
+  if(!el) return;
+  const perm = Notification.permission;
+  el.textContent = perm==='granted'?'✅ Permission granted':perm==='denied'?'❌ Blocked in browser':'⚠️ Not yet requested';
+  el.style.color = perm==='granted'?'var(--green)':perm==='denied'?'var(--red)':'var(--gold)';
+}
+
+async function saveNotifAndClose(){
+  const enabled = document.getElementById('notifToggle').checked;
+  notifSettings.time = document.getElementById('notifTime').value || '08:00';
+  if(enabled && !notifSettings.enabled){
+    await enableNotifications();
+  } else if(!enabled){
+    await disableNotifications();
+  } else {
+    notifSettings.enabled = enabled;
+    await saveNotifSettings();
+  }
+  if(notifSettings.enabled) scheduleNotifCheck();
+  closePopup('notifSettingsPopup');
+  renderPracticeSets();
+  toast('✅ Saved!','success');
+}
+
+async function testNotification(){
+  const granted = await requestNotifPermission();
+  if(!granted){ toast('Permission denied','error'); return; }
+  notifSettings.testMode = true;
+  checkAndNotify();
+  notifSettings.testMode = false;
+  toast('🔔 Test notification sent!','success');
 }
 </script>
 
