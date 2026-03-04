@@ -147,7 +147,7 @@ input,textarea,select,button{font-family:inherit;}
 .prog-txt{font-size:0.62rem;color:var(--muted);margin-top:2px;}
 
 /* Q dots */
-.qdots{flex-shrink:0;display:flex;flex-wrap:wrap;gap:5px;padding:8px 14px;background:var(--s1);border-bottom:1px solid var(--border);max-height:120px;overflow-y:auto;}
+.qdots{flex-shrink:0;display:flex;flex-wrap:wrap;gap:5px;padding:6px 10px;background:var(--s1);border-bottom:1px solid var(--border);max-height:76px;overflow-y:auto;-webkit-overflow-scrolling:touch;}
 .qdot{width:26px;height:26px;border-radius:7px;background:var(--s2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:0.65rem;font-weight:700;cursor:pointer;color:var(--muted);}
 .qdot.a{background:rgba(79,127,255,.2);border-color:var(--acc);color:var(--acc);}
 
@@ -588,12 +588,11 @@ input,textarea,select,button{font-family:inherit;}
     <button class="btn btn-red btn-sm btn-inline" onclick="submitExam(true)">Submit</button>
   </div>
 
-  <!-- Q dots -->
   <!-- Q dots with shutter -->
-  <div style="flex-shrink:0;background:var(--s1);border-bottom:1px solid var(--border);">
-    <div onclick="toggleQdots()" style="display:flex;align-items:center;justify-content:space-between;padding:5px 14px;cursor:pointer;user-select:none;">
-      <span style="font-size:0.7rem;font-weight:700;color:var(--muted);" id="qdotsLabel">Questions</span>
-      <span id="qdotsArrow" style="font-size:0.9rem;color:var(--muted);">∧</span>
+  <div id="qdotsWrapper" style="flex-shrink:0;background:var(--s1);border-bottom:1px solid var(--border);transition:max-height .25s ease;overflow:hidden;max-height:110px;">
+    <div onclick="toggleQdots()" style="display:flex;align-items:center;justify-content:space-between;padding:4px 12px;cursor:pointer;user-select:none;background:var(--s2);min-height:28px;">
+      <span style="font-size:0.7rem;font-weight:700;color:var(--muted);" id="qdotsLabel">▼ Questions</span>
+      <span id="qdotsArrow" style="font-size:0.7rem;color:var(--muted);font-weight:700;">Hide</span>
     </div>
     <div class="qdots" id="qdots"></div>
   </div>
@@ -619,9 +618,11 @@ input,textarea,select,button{font-family:inherit;}
       <div id="pdfPageNav" style="display:none;align-items:center;justify-content:center;gap:8px;width:100%;">
         <button onclick="examPdfPrev()" style="background:#2c3148;border:none;color:#e2e6f0;border-radius:8px;padding:4px 12px;font-size:1rem;font-weight:800;cursor:pointer;">◀</button>
         <input type="number" id="examPdfPageInput" min="1" value="1"
+          inputmode="numeric" pattern="[0-9]*"
           style="width:44px;padding:3px 4px;background:#2c3148;border:1px solid #3d4a6b;border-radius:7px;color:#e2e6f0;font-size:0.82rem;font-weight:700;text-align:center;"
           onchange="jumpToPdfPage(this.value)"
-          oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+          oninput="this.value=this.value.replace(/[^0-9]/g,'')"
+          onsearch="return false">
         <span id="examPdfPageInfo" style="font-size:0.78rem;color:#7a8ab0;font-weight:700;">/ 1</span>
         <button onclick="examPdfNext()" style="background:#2c3148;border:none;color:#e2e6f0;border-radius:8px;padding:4px 12px;font-size:1rem;font-weight:800;cursor:pointer;">▶</button>
       </div>
@@ -2746,12 +2747,18 @@ function loadExamPdf(dataUrl) {
 let qdotsOpen = true;
 function toggleQdots(){
   qdotsOpen = !qdotsOpen;
-  const dots = document.getElementById('qdots');
+  const wrapper = document.getElementById('qdotsWrapper');
   const arrow = document.getElementById('qdotsArrow');
   const label = document.getElementById('qdotsLabel');
-  if(dots) dots.style.display = qdotsOpen ? '' : 'none';
-  if(arrow) arrow.textContent = qdotsOpen ? '∧' : '∨';
-  if(label) label.textContent = qdotsOpen ? 'Questions' : 'Show Questions';
+  if(qdotsOpen){
+    if(wrapper) wrapper.style.maxHeight = '110px';
+    if(arrow) arrow.textContent = 'Hide';
+    if(label) label.textContent = '▼ Questions';
+  } else {
+    if(wrapper) wrapper.style.maxHeight = '28px';
+    if(arrow) arrow.textContent = 'Show';
+    if(label) label.textContent = '▶ Questions';
+  }
 }
 
 let qShutterOpen = true;
