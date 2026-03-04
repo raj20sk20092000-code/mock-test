@@ -1772,11 +1772,17 @@ function tick(){
 
 function renderExamQ(){
   if(isPdfOnlyTest){
-    // PDF-only: just show A B C D options per question
+    const optColors = {A:'#4f7fff',B:'#10b981',C:'#f59e0b',D:'#ef4444'};
     document.getElementById('examQs').innerHTML=testQ.map((q,i)=>`
       <div class="exam-qcard" id="eqc${i}">
         <div class="eq-head"><div class="eq-num">Q.${i+1}</div></div>
-        <div class="eq-opts">${['A','B','C','D'].map(opt=>`<div class="eq-opt" id="eop${i}_${opt}" onclick="pick(${i},'${opt}')"><div class="okey">${opt}</div></div>`).join('')}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px;">
+          ${['A','B','C','D'].map(opt=>`
+            <div id="eop${i}_${opt}" onclick="pick(${i},'${opt}')"
+              style="display:flex;align-items:center;justify-content:center;padding:18px 10px;border-radius:12px;border:2px solid ${optColors[opt]};background:${optColors[opt]}18;color:${optColors[opt]};font-size:1.6rem;font-weight:900;cursor:pointer;transition:all .15s;user-select:none;">
+              ${opt}
+            </div>`).join('')}
+        </div>
       </div>`).join('');
   } else {
     document.getElementById('examQs').innerHTML=testQ.map((q,i)=>`
@@ -1798,7 +1804,6 @@ function pick(qi,opt){
   const q = testQ[qi];
   const isMulti = q.correct && q.correct.includes(',');
   if(isMulti){
-    // toggle selection
     let cur = answers[qi] ? answers[qi].split(',') : [];
     if(cur.includes(opt)) cur = cur.filter(x=>x!==opt);
     else cur.push(opt);
@@ -1807,12 +1812,23 @@ function pick(qi,opt){
   } else {
     answers[qi] = opt;
   }
+  const optColors = {A:'#4f7fff',B:'#10b981',C:'#f59e0b',D:'#ef4444'};
   ['A','B','C','D'].forEach(o=>{
     const el=document.getElementById(`eop${qi}_${o}`);
     if(!el)return;
     const sel = answers[qi] ? answers[qi].split(',').includes(o) : false;
-    el.classList.toggle('sel', sel);
+    if(isPdfOnlyTest){
+      // colorful selected state for PDF test
+      el.style.background = sel ? optColors[o] : optColors[o]+'18';
+      el.style.color = sel ? '#fff' : optColors[o];
+      el.style.transform = sel ? 'scale(1.05)' : 'scale(1)';
+      el.style.fontSize = sel ? '2rem' : '1.6rem';
+    } else {
+      el.classList.toggle('sel', sel);
+    }
   });
+  // Sync PDF page to current question in PDF test
+  if(isPdfOnlyTest) syncQuestionToPdf(qi);
   renderDots();
   const done=Object.keys(answers).length;
   document.getElementById('progFill').style.width=(done/testQ.length*100)+'%';
@@ -2080,20 +2096,25 @@ let pdfSaveSelectedAns = '';
 function openPdfQCountPopup(){
   const filled = Object.keys(homeAnsKey).length;
   const inp = document.getElementById('pdfQCountInput');
-  if(inp) inp.value = filled > 0 ? filled : 10;
-  // Show warning if no answers marked
+  // Auto-set from PDF pages
+  const pdfPages = examPdf && examPdf.total > 1 ? examPdf.total : (homePdf && homePdf.total > 1 ? homePdf.total : 0);
+  if(inp) inp.value = pdfPages > 0 ? pdfPages : (filled > 0 ? filled : 10);
   const warn = document.getElementById('pdfQCountWarn');
-  if(warn) warn.textContent = filled > 0
-    ? `✅ ${filled} answers marked on home page`
-    : '⚠️ No answers marked — go to Add page and mark answers first!';
+  if(warn) warn.textContent = pdfPages > 0
+    ? `📄 ${pdfPages} pages detected — ${filled} answers marked`
+    : filled > 0
+      ? `✅ ${filled} answers marked`
+      : '⚠️ No answers marked — go to Add page and mark answers first!';
   openPopup('pdfQCountPopup');
 }
 
 function confirmPdfQCount(){
-  const n = parseInt(document.getElementById('pdfQCountInput').value)||10;
+  // Use PDF total pages as question count if available
+  const pdfPages = examPdf && examPdf.total > 1 ? examPdf.total : 0;
+  const inputVal = parseInt(document.getElementById('pdfQCountInput').value)||10;
+  const n = pdfPages > 0 ? pdfPages : inputVal;
   closePopup('pdfQCountPopup');
   pdfQCount = n;
-  // Build testQ using homeAnsKey as correct answers
   testQ = Array.from({length:n},(_,i)=>({
     id:Date.now()+i,
     qText:`Q${i+1}`,
@@ -2668,8 +2689,21 @@ function loadExamPdf(dataUrl) {
     });
   });
 }
-function examPdfPrev() { if(examPdf.page<=1)return; examPdf.page--; renderPageOnCanvas(examPdf,'examPdfCanvas','examPdfPageInfo',null); }
-function examPdfNext() { if(examPdf.page>=examPdf.total)return; examPdf.page++; renderPageOnCanvas(examPdf,'examPdfCanvas','examPdfPageInfo',null); }
+function examPdfPrev() { if(examPdf.page<=1)return; examPdf.page--; renderPageOnCanvas(examPdf,'examPdfCanvas','examPdfPageInfo',null); if(isPdfOnlyTest) syncPdfToQuestion(examPdf.page-1); }
+function examPdfNext() { if(examPdf.page>=examPdf.total)return; examPdf.page++; renderPageOnCanvas(examPdf,'examPdfCanvas','examPdfPageInfo',null); if(isPdfOnlyTest) syncPdfToQuestion(examPdf.page-1); }
+
+function syncPdfToQuestion(qIndex){
+  const card = document.getElementById('eqc'+qIndex);
+  if(card) card.scrollIntoView({behavior:'smooth', block:'center'});
+}
+function syncQuestionToPdf(qIndex){
+  if(!isPdfOnlyTest || !examPdf.doc) return;
+  const targetPage = qIndex + 1;
+  if(targetPage >= 1 && targetPage <= examPdf.total && examPdf.page !== targetPage){
+    examPdf.page = targetPage;
+    renderPageOnCanvas(examPdf,'examPdfCanvas','examPdfPageInfo',null);
+  }
+}
 
 /* ===== UTILS ===== */
 function v(id){const el=document.getElementById(id);return el?el.value.trim():'';}
