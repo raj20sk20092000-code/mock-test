@@ -2110,7 +2110,7 @@ function submitExam(ask){
     qTimers:{...qTimers},
     isPdf: isPdfOnlyTest,
     pdfId: isPdfOnlyTest ? selectedPdfId : null,
-    details:testQ.map((q,i)=>({id:q.id,subject:q.subject||'',correct:q.correct,userAnswer:answers[i]||'',correctFlag:answers[i]===q.correct,skipped:!answers[i]}))
+    details:testQ.map((q,i)=>({id:q.id,subject:q.subject||'',correct:q.correct,userAnswer:answers[i]||'',correctFlag:answers[i]===q.correct,skipped:!answers[i],qText:q.qText||'',options:q.options||{},image:q.image||null,explanation:q.explanation||'',expMedia:q.expMedia||[]}))
   };
   testHistory.unshift(entry);
   if(testHistory.length>50)testHistory=testHistory.slice(0,50);
@@ -2825,8 +2825,21 @@ function reviewHistory(idx){
       const col=d.skipped?'var(--gold)':d.correctFlag?'var(--green)':'var(--red)';
       const cls=d.skipped?'rsi':d.correctFlag?'rc':'rw';
       const st=d.skipped?'⬜ Skip':d.correctFlag?'✅ Correct':'❌ Wrong';
+      const corrects = d.correct ? d.correct.split(',') : [];
+      const userSel  = d.userAnswer ? d.userAnswer.split(',') : [];
       return`<div class="review-item ${cls}">
         <div class="rv-st" style="color:${col}">${st} — Q.${i+1}${d.subject?` <span style="font-size:0.68rem;background:var(--s2);border:1px solid var(--border);border-radius:5px;padding:1px 6px;color:var(--muted);margin-left:4px;">${d.subject}</span>`:''}</div>
+        ${d.image?`<img src="${d.image}" style="width:100%;max-height:220px;object-fit:contain;border-radius:10px;border:1px solid var(--border);background:#000;display:block;margin:6px 0;" onclick="openImgViewer('${d.image}')" />`:''}
+        ${d.qText?`<div style="font-weight:600;font-size:0.85rem;margin-bottom:6px;">${d.qText}</div>`:''}
+        ${d.options&&Object.keys(d.options).length?`<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:4px;">
+          ${['A','B','C','D'].map(op=>{
+            let bg='var(--s2)';let bc='var(--border)';let ex='';
+            if(corrects.includes(op)){bg='rgba(16,185,129,.15)';bc='var(--green)';ex=' ✓';}
+            if(userSel.includes(op)&&!corrects.includes(op)){bg='rgba(239,68,68,.12)';bc='var(--red)';ex=' ✗';}
+            return`<span style="padding:3px 10px;border-radius:6px;font-size:0.75rem;font-weight:600;background:${bg};border:1px solid ${bc};">${op}: ${d.options[op]||''}${ex}</span>`;
+          }).join('')}
+        </div>`:''}
+        ${d.explanation?`<div style="font-size:0.78rem;color:var(--muted);margin-top:4px;">💡 ${d.explanation}</div>`:''}
       </div>`;
     }).join('');
     document.getElementById('histReviewTitle').textContent = h.title + ' — ' + h.date;
