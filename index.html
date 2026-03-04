@@ -620,6 +620,11 @@ input,textarea,select,button{font-family:inherit;}
 
     <!-- Questions half -->
     <div class="questions-half" id="questionsHalf">
+      <!-- Shutter toggle -->
+      <div id="qShutter" onclick="toggleQShutter()" style="display:none;position:sticky;top:0;z-index:20;width:100%;display:flex;align-items:center;justify-content:space-between;padding:5px 12px;background:var(--s1);border-bottom:1px solid var(--border);cursor:pointer;user-select:none;">
+        <span style="font-size:0.72rem;font-weight:700;color:var(--muted);" id="qShutterLabel">Questions</span>
+        <span id="qShutterArrow" style="font-size:1rem;color:var(--muted);transition:transform .2s;">∧</span>
+      </div>
       <div id="examQs"></div>
       <div class="exam-submit-wrap">
         <button class="btn btn-green" onclick="submitExam(true)">✅ Submit Test</button>
@@ -2169,6 +2174,14 @@ function launchExamView(){
   const dots = document.getElementById('resizeDots');
   if(nav){ nav.style.display='flex'; }
   if(dots){ dots.style.display='none'; }
+  // Show shutter toggle
+  qShutterOpen = true;
+  const shutter = document.getElementById('qShutter');
+  if(shutter){ shutter.style.display='flex'; }
+  const examQs = document.getElementById('examQs');
+  if(examQs) examQs.style.display = '';
+  const submitWrap = document.querySelector('.exam-submit-wrap');
+  if(submitWrap) submitWrap.style.display = '';
   renderExamQ();renderDots();
   if(timerInt)clearInterval(timerInt);
   if(qTimerInterval)clearInterval(qTimerInterval);
@@ -2725,7 +2738,38 @@ function loadExamPdf(dataUrl) {
     });
   });
 }
-function jumpToPdfPage(val){
+let qShutterOpen = true;
+function toggleQShutter(){
+  qShutterOpen = !qShutterOpen;
+  const qh = document.getElementById('questionsHalf');
+  const examQs = document.getElementById('examQs');
+  const submitWrap = document.querySelector('.exam-submit-wrap');
+  const arrow = document.getElementById('qShutterArrow');
+  const label = document.getElementById('qShutterLabel');
+  if(qShutterOpen){
+    if(examQs) examQs.style.display = '';
+    if(submitWrap) submitWrap.style.display = '';
+    qh.style.height = qShutterPrevH || '32%';
+    arrow.style.transform = 'rotate(0deg)';
+    arrow.textContent = '∧';
+    if(label) label.textContent = 'Questions';
+    // Expand PDF back
+    document.getElementById('pdfHalf').style.height = qShutterPrevPdfH || '68%';
+  } else {
+    qShutterPrevH = document.getElementById('questionsHalf').style.height || '32%';
+    qShutterPrevPdfH = document.getElementById('pdfHalf').style.height || '68%';
+    if(examQs) examQs.style.display = 'none';
+    if(submitWrap) submitWrap.style.display = 'none';
+    qh.style.height = '32px';
+    arrow.style.transform = 'rotate(180deg)';
+    arrow.textContent = '∨';
+    if(label) label.textContent = 'Show Questions';
+    // Expand PDF to fill space
+    document.getElementById('pdfHalf').style.height = 'calc(100% - 32px - 36px)';
+  }
+}
+let qShutterPrevH = '32%';
+let qShutterPrevPdfH = '68%';
   const p = parseInt(val);
   if(!p || p < 1 || p > examPdf.total) return;
   examPdf.page = p;
@@ -2752,28 +2796,10 @@ function jumpToPdfPage(val){
     const dt = Date.now() - touchStartTime;
     if(Math.abs(dx) < SWIPE_MIN || dy > SWIPE_MAX_Y || dt > SWIPE_TIME) return;
     if(dx < 0){
-      // swipe left → next page
       examPdfNext();
-      showSwipeHint('▶ Next page');
     } else {
-      // swipe right → prev page
       examPdfPrev();
-      showSwipeHint('◀ Prev page');
     }
-  }
-
-  function showSwipeHint(text){
-    let hint = document.getElementById('swipeHint');
-    if(!hint){
-      hint = document.createElement('div');
-      hint.id = 'swipeHint';
-      hint.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,.75);color:#fff;padding:10px 22px;border-radius:12px;font-size:1rem;font-weight:700;z-index:9999;pointer-events:none;transition:opacity .3s;';
-      document.body.appendChild(hint);
-    }
-    hint.textContent = text;
-    hint.style.opacity = '1';
-    clearTimeout(hint._t);
-    hint._t = setTimeout(()=>{ hint.style.opacity='0'; }, 700);
   }
 
   document.addEventListener('DOMContentLoaded', ()=>{
