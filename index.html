@@ -647,7 +647,32 @@ input,textarea,select,button{font-family:inherit;}
 
 <!-- RESULT VIEW -->
 <div id="resultView" style="display: none;">
-  <div class="scroll-body" style="height:calc(100vh - var(--sat) - var(--sab));overflow-y:auto;-webkit-overflow-scrolling:touch;">
+  <!-- PDF Review Split View -->
+  <div id="reviewPdfSplit" style="display:none;flex-direction:column;height:calc(100vh - var(--sat) - var(--sab));overflow:hidden;">
+    <!-- PDF Half -->
+    <div id="reviewPdfHalf" style="flex:0 0 30%;overflow:hidden;position:relative;background:#111;border-bottom:2px solid var(--acc);">
+      <canvas id="reviewPdfCanvas" style="display:block;width:100%;height:100%;object-fit:contain;"></canvas>
+      <!-- Page nav -->
+      <div style="position:absolute;bottom:6px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:8px;background:rgba(0,0,0,.7);border-radius:20px;padding:4px 12px;">
+        <button onclick="reviewPdfPrev()" style="background:none;border:none;color:#fff;font-size:1rem;cursor:pointer;padding:2px 6px;">◀</button>
+        <span id="reviewPdfPageInfo" style="color:#fff;font-size:0.78rem;font-weight:700;">1 / 1</span>
+        <button onclick="reviewPdfNext()" style="background:none;border:none;color:#fff;font-size:1rem;cursor:pointer;padding:2px 6px;">▶</button>
+      </div>
+    </div>
+    <!-- Resize handle -->
+    <div id="reviewResizeHandle" style="flex-shrink:0;height:14px;background:var(--s2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:row-resize;touch-action:none;">
+      <div style="width:36px;height:4px;border-radius:2px;background:var(--border);"></div>
+    </div>
+    <!-- Responses Half -->
+    <div id="reviewRespHalf" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:10px 12px;">
+      <!-- Score summary -->
+      <div id="reviewScoreLine" style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;"></div>
+      <!-- Response cards -->
+      <div id="reviewRespCards"></div>
+    </div>
+  </div>
+  <!-- Normal result view -->
+  <div class="scroll-body" id="resultScrollBody" style="height:calc(100vh - var(--sat) - var(--sab));overflow-y:auto;-webkit-overflow-scrolling:touch;">
     <div style="padding:14px 16px 0;">
       <div class="result-hero">
         <div class="score-donut" id="scoreDonut">
@@ -674,6 +699,7 @@ input,textarea,select,button{font-family:inherit;}
     </div>
     <div style="height:20px;"></div>
   </div>
+  </div><!-- end resultScrollBody -->
 </div>
 
 <!-- BOTTOM NAV -->
@@ -1933,8 +1959,11 @@ function submitExam(ask){
   document.getElementById('pdfViewer').style.display='none'; examPdf={doc:null,page:1,total:1,rendering:false};
 
   document.getElementById('resultView').style.display='block';
-  document.getElementById('scrollBody').style.display='block';
   document.getElementById('bottomNav').style.display='none';
+  // Always show normal result first
+  document.getElementById('reviewPdfSplit').style.display='none';
+  document.getElementById('resultScrollBody').style.display='block';
+  document.getElementById('scrollBody').style.display='block';
 
   document.getElementById('scorePct').textContent=pct+'%';
   document.getElementById('scoreDonut').style.setProperty('--p',pct+'%');
@@ -1961,6 +1990,22 @@ function expMediaHTML(em){
 }
 
 function toggleReview(){
+  // PDF test - show split view
+  if(isPdfOnlyTest && testPdfData){
+    const split = document.getElementById('reviewPdfSplit');
+    const scrollBody = document.getElementById('resultScrollBody');
+    if(split.style.display==='flex'){
+      // Hide split, show normal result
+      split.style.display='none';
+      scrollBody.style.display='block';
+    } else {
+      // Show split view
+      split.style.display='flex';
+      scrollBody.style.display='none';
+      initReviewPdfSplit();
+    }
+    return;
+  }
   const a=document.getElementById('reviewArea');
   if(a.style.display==='block'){a.style.display='none';return;}
   a.style.display='block';
@@ -2116,9 +2161,14 @@ function toggleReview(){
 </div>`;
   }
 }
-function retake(){document.getElementById('resultView').style.display='none';startExam();}
+function retake(){
+  document.getElementById('resultView').style.display='none';
+  document.getElementById('reviewPdfSplit').style.display='none';
+  startExam();
+}
 function backToSetup(){
   document.getElementById('resultView').style.display='none';
+  document.getElementById('reviewPdfSplit').style.display='none';
   document.getElementById('scrollBody').style.display='block';
   goPage('setup');
 }
@@ -2789,6 +2839,112 @@ function toggleQdots(){
     if(arrow) arrow.textContent = 'Show';
     if(label) label.textContent = '▶ Questions';
   }
+}
+
+/* ===== REVIEW PDF SPLIT VIEW ===== */
+let reviewPdf = {doc:null, page:1, total:1, rendering:false};
+
+function initReviewPdfSplit(){
+  // Score line
+  const c=testQ.filter((_,i)=>answers[i]===testQ[i].correct).length;
+  const w=testQ.filter((_,i)=>answers[i]&&answers[i]!==testQ[i].correct).length;
+  const s=testQ.filter((_,i)=>!answers[i]).length;
+  document.getElementById('reviewScoreLine').innerHTML=`
+    <span style="background:rgba(16,185,129,.15);border:1px solid var(--green);border-radius:8px;padding:4px 10px;font-size:0.75rem;font-weight:700;color:var(--green);">✅ ${c} Correct</span>
+    <span style="background:rgba(239,68,68,.12);border:1px solid var(--red);border-radius:8px;padding:4px 10px;font-size:0.75rem;font-weight:700;color:var(--red);">❌ ${w} Wrong</span>
+    <span style="background:rgba(245,158,11,.1);border:1px solid var(--gold);border-radius:8px;padding:4px 10px;font-size:0.75rem;font-weight:700;color:var(--gold);">⬜ ${s} Skip</span>
+    <button onclick="backToSetup()" style="margin-left:auto;background:var(--acc);border:none;color:#fff;border-radius:8px;padding:4px 12px;font-size:0.75rem;font-weight:700;cursor:pointer;">⚙️ New Test</button>
+  `;
+  // Response cards
+  document.getElementById('reviewRespCards').innerHTML = testQ.map((q,i)=>{
+    const ua=answers[i]; const isC=ua===q.correct;
+    const cls=!ua?'gold':isC?'green':'red';
+    const colMap={green:'var(--green)',red:'var(--red)',gold:'var(--gold)'};
+    const col=colMap[cls];
+    const st=!ua?'⬜ Skip':isC?'✅ Correct':'❌ Wrong';
+    return `<div onclick="reviewJumpToPage(${i+1})" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;border:1px solid var(--border);border-left:4px solid ${col};background:var(--s1);margin-bottom:8px;cursor:pointer;active:opacity(.7);">
+      <div style="flex-shrink:0;width:36px;height:36px;border-radius:8px;background:${col}22;border:1.5px solid ${col};display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.85rem;color:${col};">Q${i+1}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:0.72rem;font-weight:700;color:${col};margin-bottom:2px;">${st}</div>
+        <div style="display:flex;gap:4px;flex-wrap:wrap;">
+          ${['A','B','C','D'].map(op=>{
+            const isCorr=op===q.correct;
+            const isUser=op===ua;
+            let bg='var(--s2)';let bc='var(--border)';let lbl='';
+            if(isCorr){bg='rgba(16,185,129,.15)';bc='var(--green)';lbl=' ✓';}
+            if(isUser&&!isCorr){bg='rgba(239,68,68,.12)';bc='var(--red)';lbl=' ✗';}
+            return `<span style="padding:2px 8px;border-radius:5px;font-size:0.72rem;font-weight:700;background:${bg};border:1px solid ${bc};">${op}${lbl}</span>`;
+          }).join('')}
+        </div>
+      </div>
+      <span style="color:var(--muted);font-size:0.85rem;">📄${i+1}</span>
+    </div>`;
+  }).join('');
+
+  // Load PDF
+  reviewPdf = {doc:null, page:1, total:1, rendering:false};
+  pdfjsLib.getDocument({data: atob(testPdfData.split(',')[1])}).promise.then(doc=>{
+    reviewPdf.doc = doc;
+    reviewPdf.total = doc.numPages;
+    renderReviewPage(1);
+  }).catch(()=>{});
+
+  // Resize handle
+  initReviewResize();
+}
+
+function renderReviewPage(n){
+  if(!reviewPdf.doc||reviewPdf.rendering) return;
+  reviewPdf.rendering = true;
+  reviewPdf.page = n;
+  document.getElementById('reviewPdfPageInfo').textContent = n + ' / ' + reviewPdf.total;
+  reviewPdf.doc.getPage(n).then(pg=>{
+    const canvas = document.getElementById('reviewPdfCanvas');
+    const half = document.getElementById('reviewPdfHalf');
+    const vp = pg.getViewport({scale: half.clientWidth / pg.getViewport({scale:1}).width});
+    canvas.width = vp.width; canvas.height = vp.height;
+    canvas.style.height = '100%'; canvas.style.width = '100%';
+    pg.render({canvasContext:canvas.getContext('2d'), viewport:vp}).promise.then(()=>{
+      reviewPdf.rendering = false;
+    });
+  });
+}
+
+function reviewJumpToPage(pageNum){
+  if(!reviewPdf.doc) return;
+  const p = Math.min(Math.max(1, pageNum), reviewPdf.total);
+  renderReviewPage(p);
+  // Highlight active card
+  document.querySelectorAll('#reviewRespCards > div').forEach((el,i)=>{
+    el.style.background = (i+1===pageNum) ? 'var(--s2)' : 'var(--s1)';
+  });
+}
+
+function reviewPdfPrev(){
+  if(reviewPdf.page > 1) renderReviewPage(reviewPdf.page - 1);
+}
+function reviewPdfNext(){
+  if(reviewPdf.page < reviewPdf.total) renderReviewPage(reviewPdf.page + 1);
+}
+
+function initReviewResize(){
+  const handle = document.getElementById('reviewResizeHandle');
+  const pdfHalf = document.getElementById('reviewPdfHalf');
+  const split = document.getElementById('reviewPdfSplit');
+  if(!handle) return;
+  let startY, startH;
+  handle.addEventListener('touchstart', e=>{
+    startY = e.touches[0].clientY;
+    startH = pdfHalf.offsetHeight;
+  },{passive:true});
+  handle.addEventListener('touchmove', e=>{
+    e.preventDefault();
+    const dy = e.touches[0].clientY - startY;
+    const total = split.offsetHeight;
+    const newH = Math.min(Math.max(startH + dy, 80), total - 80);
+    pdfHalf.style.flex = 'none';
+    pdfHalf.style.height = newH + 'px';
+  },{passive:false});
 }
 
 let qShutterOpen = true;
