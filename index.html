@@ -650,7 +650,7 @@ input,textarea,select,button{font-family:inherit;}
   <!-- PDF Review Split View -->
   <div id="reviewPdfSplit" style="display:none;flex-direction:column;height:calc(100vh - var(--sat) - var(--sab));overflow:hidden;">
     <!-- PDF Half -->
-    <div id="reviewPdfHalf" style="flex:0 0 50%;overflow:hidden;position:relative;background:#111;border-bottom:2px solid var(--acc);">
+    <div id="reviewPdfHalf" style="flex:0 0 50%;overflow-y:auto;overflow-x:hidden;position:relative;background:#111;border-bottom:2px solid var(--acc);-webkit-overflow-scrolling:touch;">
       <canvas id="reviewPdfCanvas" style="display:block;width:100%;height:100%;object-fit:cover;transform-origin:top left;touch-action:none;"></canvas>
       <!-- Page nav -->
       <div style="position:absolute;bottom:6px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:8px;background:rgba(0,0,0,.7);border-radius:20px;padding:4px 12px;">
@@ -2957,7 +2957,10 @@ function renderReviewPage(n){
     const scale = Math.max(scaleW, scaleH);
     const vp = pg.getViewport({scale});
     canvas.width = vp.width; canvas.height = vp.height;
-    canvas.style.height = '100%'; canvas.style.width = '100%';
+    canvas.style.width = '100%';
+    canvas.style.height = 'auto';
+    canvas.style.objectFit = 'none';
+    canvas.style.objectPosition = 'top';
     pg.render({canvasContext:canvas.getContext('2d'), viewport:vp}).promise.then(()=>{
       reviewPdf.rendering = false;
     });
