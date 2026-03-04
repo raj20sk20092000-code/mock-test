@@ -1740,12 +1740,29 @@ function startExam(){
   document.getElementById('resultView').style.display='none';
   history.pushState({exam:true}, '', '');
 
-  // Load PDF using PDF.js
-  loadExamPdf(testPdfData);
-  // Hide PDF section if no PDF uploaded
-  const hasPdf = !!testPdfData;
-  document.getElementById('pdfHalf').style.display = hasPdf ? '' : 'none';
-  document.getElementById('resizeHandle').style.display = hasPdf ? '' : 'none';
+  // Normal bank test - hide PDF half, full height questions
+  if(!isPdfOnlyTest){
+    document.getElementById('pdfHalf').style.display = 'none';
+    document.getElementById('resizeHandle').style.display = 'none';
+    const qh = document.getElementById('questionsHalf');
+    qh.style.flex = '1';
+    qh.style.height = '100%';
+    qh.style.maxHeight = '';
+    // Hide page nav, show resize dots
+    const nav = document.getElementById('pdfPageNav');
+    const dots = document.getElementById('resizeDots');
+    if(nav) nav.style.display = 'none';
+    if(dots) dots.style.display = '';
+    // Hide qdots shutter wrapper (not needed for bank test)
+    const wrapper = document.getElementById('qdotsWrapper');
+    if(wrapper){ wrapper.style.maxHeight = '110px'; wrapper.style.display = 'none'; }
+    qdotsOpen = true;
+  } else {
+    // Load PDF using PDF.js
+    loadExamPdf(testPdfData);
+    document.getElementById('pdfHalf').style.display = '';
+    document.getElementById('resizeHandle').style.display = '';
+  }
 
   renderExamQ();renderDots();
   if(timerInt)clearInterval(timerInt);
@@ -2188,6 +2205,10 @@ function launchExamView(){
   // Hide shutter in PDF test
   const shutter = document.getElementById('qShutter');
   if(shutter){ shutter.style.display='none'; }
+  // Show qdots wrapper
+  const qdotsWrap = document.getElementById('qdotsWrapper');
+  if(qdotsWrap){ qdotsWrap.style.display=''; qdotsWrap.style.maxHeight='110px'; }
+  qdotsOpen = true;
   renderExamQ();renderDots();
   if(timerInt)clearInterval(timerInt);
   if(qTimerInterval)clearInterval(qTimerInterval);
