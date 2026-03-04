@@ -347,9 +347,11 @@ input,textarea,select,button{font-family:inherit;}
   padding:14px 16px calc(14px + env(safe-area-inset-bottom,0px));
   display:none;animation:slideUpBanner .4s ease;
   box-shadow:0 -8px 32px rgba(0,0,0,.5);
+  pointer-events:none;
 }
 @keyframes slideUpBanner{from{transform:translateY(100%)}to{transform:translateY(0)}}
-#pwa-banner.show{display:block;}
+#pwa-banner.show{display:block;pointer-events:all;}
+
 .pwa-banner-inner{display:flex;align-items:center;gap:12px;}
 .pwa-banner-icon{width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#4f7fff,#7c3aed);display:flex;align-items:center;justify-content:center;font-size:1.6rem;flex-shrink:0;}
 .pwa-banner-text{flex:1;}
@@ -364,8 +366,9 @@ input,textarea,select,button{font-family:inherit;}
   padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px));
   display:none;text-align:center;
   box-shadow:0 -8px 32px rgba(0,0,0,.5);
+  pointer-events:none;
 }
-#ios-guide.show{display:block;}
+#ios-guide.show{display:block;pointer-events:all;}
 #ios-guide h3{font-size:0.9rem;font-weight:800;margin-bottom:10px;color:#e2e6f0;}
 .ios-steps{display:flex;justify-content:center;gap:16px;flex-wrap:wrap;margin-bottom:12px;}
 .ios-step{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:0.7rem;color:#5a6178;font-weight:600;}
@@ -2872,19 +2875,18 @@ function sv(id,val){const el=document.getElementById(id);if(el)el.value=val;}
 /* ===== PWA / INSTALL LOGIC ===== */
 let deferredPrompt = null;
 const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
-const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+const pwaDismissed = localStorage.getItem('pwa_dismissed') === '1';
 
-// Don't show if already installed
-if(!isStandalone) {
+// Don't show if already installed or dismissed
+if(!isStandalone && !pwaDismissed) {
   if(isIOS) {
-    // Show iOS guide after 2 seconds
-    setTimeout(()=>{ document.getElementById('ios-guide').classList.add('show'); }, 2000);
+    setTimeout(()=>{ document.getElementById('ios-guide').classList.add('show'); }, 3000);
   } else {
-    // Android/Chrome: wait for beforeinstallprompt
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       deferredPrompt = e;
-      setTimeout(()=>{ document.getElementById('pwa-banner').classList.add('show'); }, 1500);
+      setTimeout(()=>{ document.getElementById('pwa-banner').classList.add('show'); }, 2000);
     });
   }
 }
