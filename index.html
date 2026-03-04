@@ -1409,6 +1409,8 @@ function updatePdfTestStatus(){
         </div>
         <button onclick="event.stopPropagation();togglePdfMenu(${p.id})" style="background:none;border:none;color:var(--muted);font-size:1.2rem;cursor:pointer;padding:4px 8px;line-height:1;">⋮</button>
         <div id="pdfmenu_${p.id}" style="display:none;position:absolute;right:8px;top:38px;background:var(--s3);border:1px solid var(--border);border-radius:10px;z-index:100;min-width:130px;box-shadow:0 4px 20px rgba(0,0,0,.4);overflow:hidden;">
+          <div onclick="event.stopPropagation();editPdfQCount(${p.id})" style="padding:12px 16px;font-size:0.85rem;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px;">✏️ Edit</div>
+          <div style="height:1px;background:var(--border);"></div>
           <div onclick="event.stopPropagation();viewTestPdf(${p.id})" style="padding:12px 16px;font-size:0.85rem;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px;">👁️ View</div>
           <div style="height:1px;background:var(--border);"></div>
           <div onclick="event.stopPropagation();replaceTestPdf(${p.id})" style="padding:12px 16px;font-size:0.85rem;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px;">🔄 Replace</div>
@@ -2291,18 +2293,54 @@ function clearHomePdf() {
   document.getElementById('homePdfCanvas').width = 0;
 }
 
+function editPdfQCount(id){
+  document.querySelectorAll('[id^="pdfmenu_"]').forEach(m=>m.style.display='none');
+  // Load this PDF's answer key into homeAnsKey and open home page PDF viewer
+  try {
+    const pdfList = JSON.parse(localStorage.getItem('smt_pdf_list')||'[]');
+    const item = pdfList.find(p=>p.id===id);
+    const data = localStorage.getItem('smt_pdf_data_'+id);
+    if(!item || !data){ toast('PDF not found','error'); return; }
+    // Load into home PDF viewer
+    homeAnsKey = item.ansKey || {};
+    homePdf.data = data;
+    homePdf.name = item.name;
+    // Mark which PDF we're editing
+    window._editingPdfId = id;
+    // Change "Save to Test" button text
+    initHomePdf(data, item.name);
+    const saveBtn = document.querySelector('[onclick="useHomePdfInTest()"]');
+    if(saveBtn) saveBtn.textContent = '💾 Save Changes';
+    goPage('add');
+    toast('Edit Answer Key, then tap Save Changes','success');
+  } catch(e){ toast('Error loading PDF','error'); }
+}
+
 function useHomePdfInTest() {
   if (!homePdf.data) return;
-  // Save to PDF list
+  const editId = window._editingPdfId;
+  if(editId){
+    // Updating existing PDF answer key
+    try {
+      let pdfList = JSON.parse(localStorage.getItem('smt_pdf_list')||'[]');
+      const idx = pdfList.findIndex(p=>p.id===editId);
+      if(idx>=0) pdfList[idx].ansKey = homeAnsKey;
+      localStorage.setItem('smt_pdf_list', JSON.stringify(pdfList));
+      if(selectedPdfId===editId) {} // homeAnsKey already updated
+    } catch(e){}
+    window._editingPdfId = null;
+    clearHomePdf();
+    toast('✅ Answer Key updated!','success');
+    goPage('setup');
+    return;
+  }
+  // New PDF — save to list
   try {
     let pdfList = JSON.parse(localStorage.getItem('smt_pdf_list')||'[]');
     const id = Date.now();
-    // Store data separately to avoid list getting too big
     localStorage.setItem('smt_pdf_data_'+id, homePdf.data);
     pdfList.push({
-      id: id,
-      name: homePdf.name,
-      ansKey: homeAnsKey,
+      id, name: homePdf.name, ansKey: homeAnsKey,
       added: new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short'})
     });
     localStorage.setItem('smt_pdf_list', JSON.stringify(pdfList));
