@@ -599,19 +599,23 @@ input,textarea,select,button{font-family:inherit;}
         <span style="font-size:0.7rem;">Upload a PDF in Setup</span>
       </div>
       <div id="pdfViewer" style="display:none;width:100%;height:100%;overflow-y:auto;background:#1a1a2e;-webkit-overflow-scrolling:touch;">
-        <div style="display:flex;align-items:center;justify-content:center;gap:8px;padding:5px 10px;background:rgba(0,0,0,.7);position:sticky;top:0;z-index:10;">
-          <button onclick="examPdfPrev()" style="background:#222736;border:1px solid #2c3148;color:#e2e6f0;border-radius:7px;padding:5px 12px;font-size:0.78rem;font-weight:700;cursor:pointer;">◀</button>
-          <span id="examPdfPageInfo" style="font-size:0.73rem;color:#e2e6f0;font-weight:700;min-width:60px;text-align:center;">1 / 1</span>
-          <button onclick="examPdfNext()" style="background:#222736;border:1px solid #2c3148;color:#e2e6f0;border-radius:7px;padding:5px 12px;font-size:0.78rem;font-weight:700;cursor:pointer;">▶</button>
-        </div>
         <canvas id="examPdfCanvas" style="display:block;"></canvas>
       </div>
       <iframe id="pdfFrame" style="display:none;"></iframe>
     </div>
 
-    <!-- Resize handle -->
+    <!-- Resize handle + PDF page nav -->
     <div class="resize-handle" id="resizeHandle">
-      <div class="resize-dots"><span></span><span></span><span></span></div>
+      <div id="pdfPageNav" style="display:none;align-items:center;justify-content:center;gap:8px;width:100%;">
+        <button onclick="examPdfPrev()" style="background:#2c3148;border:none;color:#e2e6f0;border-radius:8px;padding:4px 12px;font-size:1rem;font-weight:800;cursor:pointer;">◀</button>
+        <input type="number" id="examPdfPageInput" min="1" value="1"
+          style="width:44px;padding:3px 4px;background:#2c3148;border:1px solid #3d4a6b;border-radius:7px;color:#e2e6f0;font-size:0.82rem;font-weight:700;text-align:center;"
+          onchange="jumpToPdfPage(this.value)"
+          oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+        <span id="examPdfPageInfo" style="font-size:0.78rem;color:#7a8ab0;font-weight:700;">/ 1</span>
+        <button onclick="examPdfNext()" style="background:#2c3148;border:none;color:#e2e6f0;border-radius:8px;padding:4px 12px;font-size:1rem;font-weight:800;cursor:pointer;">▶</button>
+      </div>
+      <div class="resize-dots" id="resizeDots"><span></span><span></span><span></span></div>
     </div>
 
     <!-- Questions half -->
@@ -1775,16 +1779,19 @@ function renderExamQ(){
     const optColors = {A:'#4f7fff',B:'#10b981',C:'#f59e0b',D:'#ef4444'};
     document.getElementById('examQs').innerHTML=testQ.map((q,i)=>`
       <div class="exam-qcard" id="eqc${i}">
-        <div class="eq-head"><div class="eq-num">Q.${i+1}</div></div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px;">
+        <div class="eq-head">
+          <div class="eq-num" onclick="syncQuestionToPdf(${i})" style="cursor:pointer;" title="Jump to page ${i+1}">Q.${i+1} 📄</div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-top:8px;">
           ${['A','B','C','D'].map(opt=>`
             <div id="eop${i}_${opt}" onclick="pick(${i},'${opt}')"
-              style="display:flex;align-items:center;justify-content:center;padding:18px 10px;border-radius:12px;border:2px solid ${optColors[opt]};background:${optColors[opt]}18;color:${optColors[opt]};font-size:1.6rem;font-weight:900;cursor:pointer;transition:all .15s;user-select:none;">
+              style="display:flex;align-items:center;justify-content:center;padding:16px 6px;border-radius:12px;border:2px solid ${optColors[opt]};background:${optColors[opt]}18;color:${optColors[opt]};font-size:1.5rem;font-weight:900;cursor:pointer;transition:all .15s;user-select:none;">
               ${opt}
             </div>`).join('')}
         </div>
       </div>`).join('');
   } else {
+    const optColors = {A:'#4f7fff',B:'#10b981',C:'#f59e0b',D:'#ef4444'};
     document.getElementById('examQs').innerHTML=testQ.map((q,i)=>`
       <div class="exam-qcard" id="eqc${i}">
         <div class="eq-head">
@@ -1795,7 +1802,14 @@ function renderExamQ(){
         </div>
         ${q.image?`<img src="${q.image}" class="eq-img" onclick="openImgViewer('${q.image}')" />`:''}
         <div class="eq-text">${q.qText||''}</div>
-        <div class="eq-opts">${['A','B','C','D'].map(opt=>`<div class="eq-opt" id="eop${i}_${opt}" onclick="pick(${i},'${opt}')"><div class="okey">${opt}</div><span>${q.options[opt]||''}</span></div>`).join('')}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-top:8px;">
+          ${['A','B','C','D'].map(opt=>`
+            <div id="eop${i}_${opt}" onclick="pick(${i},'${opt}')"
+              style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 4px;border-radius:12px;border:2px solid ${optColors[opt]};background:${optColors[opt]}18;color:${optColors[opt]};cursor:pointer;transition:all .15s;user-select:none;gap:4px;">
+              <span style="font-size:1.2rem;font-weight:900;">${opt}</span>
+              <span style="font-size:0.65rem;font-weight:600;color:var(--text);text-align:center;line-height:1.2;word-break:break-word;">${q.options[opt]||''}</span>
+            </div>`).join('')}
+        </div>
       </div>`).join('');
   }
 }
@@ -1824,7 +1838,14 @@ function pick(qi,opt){
       el.style.transform = sel ? 'scale(1.05)' : 'scale(1)';
       el.style.fontSize = sel ? '2rem' : '1.6rem';
     } else {
-      el.classList.toggle('sel', sel);
+      // colorful selected state for normal test
+      el.style.background = sel ? optColors[o] : optColors[o]+'18';
+      el.style.borderColor = optColors[o];
+      const letter = el.querySelector('span:first-child');
+      if(letter) letter.style.color = sel ? '#fff' : optColors[o];
+      const text = el.querySelector('span:last-child');
+      if(text) text.style.color = sel ? '#fff' : 'var(--text)';
+      el.style.transform = sel ? 'scale(1.03)' : 'scale(1)';
     }
   });
   // Sync PDF page to current question in PDF test
@@ -1837,7 +1858,7 @@ function pick(qi,opt){
 
 function renderDots(){
   document.getElementById('qdots').innerHTML=testQ.map((_,i)=>`
-    <div class="qdot${answers[i]?' a':''}" onclick="document.getElementById('eqc${i}').scrollIntoView({behavior:'smooth',block:'start'})">${i+1}</div>`).join('');
+    <div class="qdot${answers[i]?' a':''}" onclick="document.getElementById('eqc${i}').scrollIntoView({behavior:'smooth',block:'start'});syncQuestionToPdf(${i});">${i+1}</div>`).join('');
 }
 
 function submitExam(ask){
@@ -2138,7 +2159,16 @@ function launchExamView(){
   document.getElementById('resultView').style.display='none';
   loadExamPdf(testPdfData);
   document.getElementById('pdfHalf').style.display = '';
+  document.getElementById('pdfHalf').style.flex = 'none';
+  document.getElementById('pdfHalf').style.height = '68%';
+  document.getElementById('questionsHalf').style.flex = 'none';
+  document.getElementById('questionsHalf').style.height = '32%';
   document.getElementById('resizeHandle').style.display = '';
+  // Show page nav in center for PDF test
+  const nav = document.getElementById('pdfPageNav');
+  const dots = document.getElementById('resizeDots');
+  if(nav){ nav.style.display='flex'; }
+  if(dots){ dots.style.display='none'; }
   renderExamQ();renderDots();
   if(timerInt)clearInterval(timerInt);
   if(qTimerInterval)clearInterval(qTimerInterval);
@@ -2490,7 +2520,13 @@ function renderPageOnCanvas(pdfObj, canvasId, pageInfoId, cb) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     page.render({ canvasContext: ctx, viewport: vp }).promise.then(() => {
       pdfObj.rendering = false;
-      if (pageInfoId) document.getElementById(pageInfoId).textContent = pdfObj.page + ' / ' + pdfObj.total;
+      if (pageInfoId) {
+        const el = document.getElementById(pageInfoId);
+        if(el) el.textContent = '/ ' + pdfObj.total;
+        // Update input if exam PDF
+        const inp = document.getElementById('examPdfPageInput');
+        if(inp && canvasId === 'examPdfCanvas') inp.value = pdfObj.page;
+      }
       if (cb) cb();
     });
   });
@@ -2689,6 +2725,74 @@ function loadExamPdf(dataUrl) {
     });
   });
 }
+function jumpToPdfPage(val){
+  const p = parseInt(val);
+  if(!p || p < 1 || p > examPdf.total) return;
+  examPdf.page = p;
+  renderPageOnCanvas(examPdf,'examPdfCanvas','examPdfPageInfo',null);
+  if(isPdfOnlyTest) syncPdfToQuestion(p-1);
+}
+
+// ===== SWIPE GESTURE FOR PDF =====
+(function initPdfSwipe(){
+  let touchStartX = 0, touchStartY = 0, touchStartTime = 0;
+  const SWIPE_MIN = 50;   // min px horizontal
+  const SWIPE_MAX_Y = 80; // max px vertical drift
+  const SWIPE_TIME = 400; // max ms
+
+  function onTouchStart(e){
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+    touchStartTime = Date.now();
+  }
+  function onTouchEnd(e){
+    if(!isPdfOnlyTest) return;
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    const dy = Math.abs(e.changedTouches[0].clientY - touchStartY);
+    const dt = Date.now() - touchStartTime;
+    if(Math.abs(dx) < SWIPE_MIN || dy > SWIPE_MAX_Y || dt > SWIPE_TIME) return;
+    if(dx < 0){
+      // swipe left → next page
+      examPdfNext();
+      showSwipeHint('▶ Next page');
+    } else {
+      // swipe right → prev page
+      examPdfPrev();
+      showSwipeHint('◀ Prev page');
+    }
+  }
+
+  function showSwipeHint(text){
+    let hint = document.getElementById('swipeHint');
+    if(!hint){
+      hint = document.createElement('div');
+      hint.id = 'swipeHint';
+      hint.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,.75);color:#fff;padding:10px 22px;border-radius:12px;font-size:1rem;font-weight:700;z-index:9999;pointer-events:none;transition:opacity .3s;';
+      document.body.appendChild(hint);
+    }
+    hint.textContent = text;
+    hint.style.opacity = '1';
+    clearTimeout(hint._t);
+    hint._t = setTimeout(()=>{ hint.style.opacity='0'; }, 700);
+  }
+
+  document.addEventListener('DOMContentLoaded', ()=>{
+    const viewer = document.getElementById('pdfViewer');
+    if(viewer){
+      viewer.addEventListener('touchstart', onTouchStart, {passive:true});
+      viewer.addEventListener('touchend', onTouchEnd, {passive:true});
+    }
+  });
+  // Also attach after load
+  window.addEventListener('load', ()=>{
+    const viewer = document.getElementById('pdfViewer');
+    if(viewer){
+      viewer.addEventListener('touchstart', onTouchStart, {passive:true});
+      viewer.addEventListener('touchend', onTouchEnd, {passive:true});
+    }
+  });
+})();
+
 function examPdfPrev() { if(examPdf.page<=1)return; examPdf.page--; renderPageOnCanvas(examPdf,'examPdfCanvas','examPdfPageInfo',null); if(isPdfOnlyTest) syncPdfToQuestion(examPdf.page-1); }
 function examPdfNext() { if(examPdf.page>=examPdf.total)return; examPdf.page++; renderPageOnCanvas(examPdf,'examPdfCanvas','examPdfPageInfo',null); if(isPdfOnlyTest) syncPdfToQuestion(examPdf.page-1); }
 
