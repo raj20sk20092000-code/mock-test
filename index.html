@@ -1736,7 +1736,7 @@ function toggleReview(){
         ${q.explanation?`<div style="font-size:0.78rem;color:var(--muted);margin-top:6px;">💡 ${q.explanation}</div>`:''}
       </div>`;
 
-    }).join('');
+    }).join('')+'<div style="text-align:center;font-size:2rem;padding:18px 0 8px;">🎯</div>';
   } else {
     a.innerHTML=testQ.map((q,i)=>{
       const ua=answers[i];const isC=ua===q.correct;
@@ -1762,7 +1762,7 @@ function toggleReview(){
         ${q.explanation?`<div style="font-size:0.78rem;color:var(--muted);margin-top:8px;">💡 ${q.explanation}</div>`:''}
         <div class="rv-qtime">⏱️ Time: ${qm}:${qs<10?'0':''}${qs}${qt>90?' — <span style="color:var(--red)">Slow</span>':''}</div>
       </div>`;
-    }).join('');
+    }).join('')+'<div style="text-align:center;font-size:2rem;padding:18px 0 8px;">🎯</div>';
   }
 }
 function retake(){document.getElementById('resultView').style.display='none';startExam();}
