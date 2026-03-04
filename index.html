@@ -651,7 +651,7 @@ input,textarea,select,button{font-family:inherit;}
   <div id="reviewPdfSplit" style="display:none;flex-direction:column;height:calc(100vh - var(--sat) - var(--sab));overflow:hidden;">
     <!-- PDF Half -->
     <div id="reviewPdfHalf" style="flex:0 0 50%;overflow:hidden;position:relative;background:#111;border-bottom:2px solid var(--acc);">
-      <canvas id="reviewPdfCanvas" style="display:block;width:100%;height:100%;object-fit:contain;"></canvas>
+      <canvas id="reviewPdfCanvas" style="display:block;width:100%;height:100%;object-fit:cover;transform-origin:top left;touch-action:none;"></canvas>
       <!-- Page nav -->
       <div style="position:absolute;bottom:6px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:8px;background:rgba(0,0,0,.7);border-radius:20px;padding:4px 12px;">
         <button onclick="reviewPdfPrev()" style="background:none;border:none;color:#fff;font-size:1rem;cursor:pointer;padding:2px 6px;">◀</button>
@@ -2891,6 +2891,53 @@ function initReviewPdfSplit(){
 
   // Resize handle
   initReviewResize();
+  initReviewPdfZoom();
+}
+
+function initReviewPdfZoom(){
+  const canvas = document.getElementById('reviewPdfCanvas');
+  let scale = 1, lastScale = 1;
+  let originX = 0, originY = 0;
+  let lastTap = 0;
+
+  // Pinch zoom
+  let initDist = 0;
+  canvas.addEventListener('touchstart', e=>{
+    if(e.touches.length === 2){
+      initDist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+    }
+    // Double tap to reset/zoom
+    if(e.touches.length === 1){
+      const now = Date.now();
+      if(now - lastTap < 300){
+        scale = scale > 1 ? 1 : 2.5;
+        canvas.style.transform = scale === 1 ? '' : `scale(${scale})`;
+        originX = 0; originY = 0;
+      }
+      lastTap = now;
+    }
+  },{passive:true});
+
+  canvas.addEventListener('touchmove', e=>{
+    if(e.touches.length === 2){
+      e.preventDefault();
+      const dist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      scale = Math.min(Math.max(lastScale * (dist / initDist), 1), 4);
+      canvas.style.transform = `scale(${scale})`;
+    }
+  },{passive:false});
+
+  canvas.addEventListener('touchend', e=>{
+    if(e.touches.length < 2){
+      lastScale = scale;
+    }
+  },{passive:true});
 }
 
 function renderReviewPage(n){
@@ -2901,7 +2948,14 @@ function renderReviewPage(n){
   reviewPdf.doc.getPage(n).then(pg=>{
     const canvas = document.getElementById('reviewPdfCanvas');
     const half = document.getElementById('reviewPdfHalf');
-    const vp = pg.getViewport({scale: half.clientWidth / pg.getViewport({scale:1}).width});
+    const halfW = half.clientWidth;
+    const halfH = half.clientHeight;
+    const naturalVp = pg.getViewport({scale:1});
+    // Scale so width fills container, then crop to square
+    const scaleW = halfW / naturalVp.width;
+    const scaleH = halfH / naturalVp.height;
+    const scale = Math.max(scaleW, scaleH);
+    const vp = pg.getViewport({scale});
     canvas.width = vp.width; canvas.height = vp.height;
     canvas.style.height = '100%'; canvas.style.width = '100%';
     pg.render({canvasContext:canvas.getContext('2d'), viewport:vp}).promise.then(()=>{
