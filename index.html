@@ -884,35 +884,154 @@ function subChip(sub){
   return`<span class="schip" style="background:${getSubjectColor(sub)}">${sub}</span>`;
 }
 
-/* ===== localStorage ===== */
-function lsSave(){
+/* ===== IndexedDB Storage ===== */
+const DB_NAME = 'SmartMockDB';
+const DB_VER  = 1;
+let db = null;
+
+function openDB(){
+  return new Promise((res,rej)=>{
+    if(db){res(db);return;}
+    const req = indexedDB.open(DB_NAME, DB_VER);
+    req.onupgradeneeded = e=>{
+      const d = e.target.result;
+      if(!d.objectStoreNames.contains('questions')) d.createObjectStore('questions', {keyPath:'id'});
+      if(!d.objectStoreNames.contains('pdfs'))      d.createObjectStore('pdfs',      {keyPath:'id'});
+      if(!d.objectStoreNames.contains('pdfmeta'))   d.createObjectStore('pdfmeta',   {keyPath:'id'});
+      if(!d.objectStoreNames.contains('misc'))      d.createObjectStore('misc',      {keyPath:'key'});
+    };
+    req.onsuccess = e=>{ db=e.target.result; res(db); };
+    req.onerror   = e=>rej(e);
+  });
+}
+
+function dbSet(store, value){
+  return openDB().then(d=>new Promise((res,rej)=>{
+    const tx = d.transaction(store,'readwrite');
+    tx.objectStore(store).put(value);
+    tx.oncomplete=()=>res();
+    tx.onerror=e=>rej(e);
+  }));
+}
+function dbGet(store, key){
+  return openDB().then(d=>new Promise((res,rej)=>{
+    const tx = d.transaction(store,'readonly');
+    const req = tx.objectStore(store).get(key);
+    req.onsuccess=()=>res(req.result);
+    req.onerror=e=>rej(e);
+  }));
+}
+function dbDel(store, key){
+  return openDB().then(d=>new Promise((res,rej)=>{
+    const tx = d.transaction(store,'readwrite');
+    tx.objectStore(store).delete(key);
+    tx.oncomplete=()=>res();
+    tx.onerror=e=>rej(e);
+  }));
+}
+function dbGetAll(store){
+  return openDB().then(d=>new Promise((res,rej)=>{
+    const tx = d.transaction(store,'readonly');
+    const req = tx.objectStore(store).getAll();
+    req.onsuccess=()=>res(req.result||[]);
+    req.onerror=e=>rej(e);
+  }));
+}
+
+/* ===== Save/Load Questions ===== */
+async function saveQuestions(){
   try{
-    const d = JSON.stringify(questions);
-    localStorage.setItem('smt_v3', d);
-    updateStorageBar(d.length);
-  }catch(e){
-    if(e.name==='QuotaExceededError') toast('⚠️ Storage full! Please export your questions.','error');
-  }
+    await openDB();
+    const tx = db.transaction('questions','readwrite');
+    const st = tx.objectStore('questions');
+    st.clear();
+    questions.forEach(q=>st.put(q));
+    await new Promise((res,rej)=>{tx.oncomplete=res;tx.onerror=rej;});
+    updateStorageBar();
+  }catch(e){ toast('⚠️ Save error: '+e.message,'error'); }
 }
-function lsLoad(){
-  try{ const d=localStorage.getItem('smt_v3'); if(d) questions=JSON.parse(d); }catch(e){}
+
+async function loadQuestions(){
+  try{
+    const qs = await dbGetAll('questions');
+    if(qs.length){ questions = qs; return; }
+    // Migrate from localStorage
+    const old = localStorage.getItem('smt_v3');
+    if(old){ questions = JSON.parse(old); await saveQuestions(); localStorage.removeItem('smt_v3'); toast('✅ Data migrated to new storage!','success'); }
+  }catch(e){ try{ const d=localStorage.getItem('smt_v3'); if(d) questions=JSON.parse(d); }catch(e2){} }
 }
-function updateStorageBar(len){
-  const kb=Math.round((len||0)/1024);
-  const pct=Math.min(100,Math.round(kb/5000*100));
-  const f=document.getElementById('storageFill');
-  const l=document.getElementById('storageLabel');
-  if(f){f.style.width=pct+'%';f.style.background=pct>80?'linear-gradient(90deg,var(--gold),var(--red))':'linear-gradient(90deg,var(--green),var(--acc))';}
-  if(l) l.textContent=kb<1000?kb+' KB':(kb/1024).toFixed(1)+' MB';
+
+/* ===== PDF Storage ===== */
+async function savePdfData(id, data){
+  await dbSet('pdfs', {id: id, data: data});
 }
+async function getPdfData(id){
+  const rec = await dbGet('pdfs', id);
+  return rec ? rec.data : null;
+}
+async function deletePdfData(id){
+  await dbDel('pdfs', id);
+}
+async function savePdfMeta(list){
+  await dbSet('misc', {key:'pdflist', value: list});
+}
+async function loadPdfMeta(){
+  const rec = await dbGet('misc','pdflist');
+  return rec ? rec.value : [];
+}
+
+/* ===== Misc (anskey, homepdf) ===== */
+async function dbMiscSet(key, value){ await dbSet('misc',{key,value}); }
+async function dbMiscGet(key){ const r=await dbGet('misc',key); return r?r.value:null; }
+
+/* ===== Storage Bar ===== */
+async function updateStorageBar(){
+  try{
+    if(navigator.storage && navigator.storage.estimate){
+      const {usage,quota} = await navigator.storage.estimate();
+      const kb = Math.round(usage/1024);
+      const pct = Math.min(100,Math.round(usage/quota*100));
+      const f=document.getElementById('storageFill');
+      const l=document.getElementById('storageLabel');
+      if(f){f.style.width=pct+'%';f.style.background=pct>80?'linear-gradient(90deg,var(--gold),var(--red))':'linear-gradient(90deg,var(--green),var(--acc))';}
+      if(l) l.textContent=kb<1000?kb+' KB':(kb/1024).toFixed(1)+' MB';
+    }
+  }catch(e){}
+}
+
 function save(){
-  lsSave();
+  saveQuestions();
   document.getElementById('topBadge').textContent=questions.length+' Q';
   updateSubjectSel();updateSetupStats();updateAddPageStats();
 }
-lsLoad(); save();
-try{testHistory=JSON.parse(localStorage.getItem('smt_history')||'[]');}catch(e){}
-try{streakData=JSON.parse(localStorage.getItem('smt_streak')||'{}');}catch(e){}
+
+/* ===== Init ===== */
+async function initApp(){
+  await loadQuestions();
+  save();
+  // Load history & streak from localStorage (small data)
+  try{testHistory=JSON.parse(localStorage.getItem('smt_history')||'[]');}catch(e){}
+  try{streakData=JSON.parse(localStorage.getItem('smt_streak')||'{}');}catch(e){}
+  // Restore home PDF
+  try{
+    const hpdf = await dbMiscGet('home_pdf_data');
+    const hname = await dbMiscGet('home_pdf_name');
+    if(hpdf && hname){ homePdf.data=hpdf; homePdf.name=hname; initHomePdf(hpdf,hname); }
+  }catch(e){}
+  // Restore home anskey
+  try{
+    const ak = await dbMiscGet('home_anskey');
+    if(ak) homeAnsKey = ak;
+    else {
+      // migrate from localStorage
+      const old = localStorage.getItem('smt_home_anskey');
+      if(old){ homeAnsKey=JSON.parse(old); await dbMiscSet('home_anskey',homeAnsKey); }
+    }
+  }catch(e){}
+  updateStorageBar();
+}
+initApp();
+
 
 /* ===== TOAST ===== */
 function toast(msg,type='info'){
@@ -999,7 +1118,7 @@ document.querySelectorAll('.popup-overlay').forEach(el=>{
 function onTestPdfPicked(e){
   const f=e.target.files[0];if(!f)return;
   const r=new FileReader();
-  r.onload=ev=>{
+  r.onload=async ev=>{
     testPdfData=ev.target.result;
     const chip=document.getElementById('testPdfChip');
     const nameEl=document.getElementById('testPdfName');
@@ -1385,11 +1504,11 @@ function startBankTest(){
   startExam();
 }
 
-function updatePdfTestStatus(){
+async function updatePdfTestStatus(){
   const el = document.getElementById('pdfTestStatus');
   if(!el) return;
   let pdfList = [];
-  try { pdfList = JSON.parse(localStorage.getItem('smt_pdf_list')||'[]'); } catch(e){}
+  pdfList = await loadPdfMeta();
 
   if(!pdfList.length){
     el.innerHTML = `<div style="font-size:0.78rem;color:var(--muted);margin-bottom:12px;padding:10px;background:var(--s2);border-radius:9px;text-align:center;">
@@ -1424,12 +1543,12 @@ function updatePdfTestStatus(){
 
 let selectedPdfId = null;
 
-function selectTestPdf(id){
+async function selectTestPdf(id){
   selectedPdfId = id;
   try {
-    const pdfList = JSON.parse(localStorage.getItem('smt_pdf_list')||'[]');
+    const pdfList = await loadPdfMeta();
     const item = pdfList.find(p=>p.id===id);
-    const data = localStorage.getItem('smt_pdf_data_'+id);
+    const data = await getPdfData(id);
     if(data && item){
       testPdfData = data;
       homeAnsKey = item.ansKey || {};
@@ -1453,10 +1572,10 @@ document.addEventListener('click', ()=>{
   document.querySelectorAll('[id^="qmenu_"]').forEach(m=>m.style.display='none');
 });
 
-function viewTestPdf(id){
+async function viewTestPdf(id){
   document.querySelectorAll('[id^="pdfmenu_"]').forEach(m=>m.style.display='none');
   try {
-    const data = localStorage.getItem('smt_pdf_data_'+id);
+    const data = await getPdfData(id);
     if(data) openPdfBlob(data);
   } catch(e){ toast('Could not open PDF','error'); }
 }
@@ -1469,13 +1588,13 @@ function replaceTestPdf(id){
   inp.onchange = e=>{
     const f=e.target.files[0]; if(!f) return;
     const r=new FileReader();
-    r.onload=ev=>{
+    r.onload=async ev=>{
       try {
-        localStorage.setItem('smt_pdf_data_'+id, ev.target.result);
-        let pdfList = JSON.parse(localStorage.getItem('smt_pdf_list')||'[]');
+        await savePdfData(id, ev.target.result);
+        let pdfList = await loadPdfMeta();
         const idx = pdfList.findIndex(p=>p.id===id);
         if(idx>=0) pdfList[idx].name = f.name;
-        localStorage.setItem('smt_pdf_list', JSON.stringify(pdfList));
+        await savePdfMeta(pdfList);
         if(selectedPdfId===id) testPdfData=ev.target.result;
         toast('✅ PDF replaced!','success');
         updatePdfTestStatus();
@@ -1486,13 +1605,13 @@ function replaceTestPdf(id){
   inp.click();
 }
 
-function deleteTestPdf(id){
+async function deleteTestPdf(id){
   if(!confirm('Remove this PDF?')) return;
   try {
-    let pdfList = JSON.parse(localStorage.getItem('smt_pdf_list')||'[]');
+    let pdfList = await loadPdfMeta();
     pdfList = pdfList.filter(p=>p.id!==id);
-    localStorage.setItem('smt_pdf_list', JSON.stringify(pdfList));
-    localStorage.removeItem('smt_pdf_data_'+id);
+    await savePdfMeta(pdfList);
+    await deletePdfData(id);
     if(selectedPdfId===id){ testPdfData=null; selectedPdfId=null; homeAnsKey={}; }
   } catch(e){}
   updatePdfTestStatus();
@@ -2337,7 +2456,7 @@ function renderHomeAnsKeyBtns(){
 }
 
 
-function setHomeAns(qNum, opt){
+async function setHomeAns(qNum, opt){
   let cur = homeAnsKey[qNum] ? homeAnsKey[qNum].split(",") : [];
   if(cur.includes(opt)) cur = cur.filter(x=>x!==opt);
   else cur.push(opt);
@@ -2345,7 +2464,7 @@ function setHomeAns(qNum, opt){
   if(cur.length) homeAnsKey[qNum] = cur.join(",");
   else delete homeAnsKey[qNum];
   renderHomeAnsKeyBtns();
-  try{localStorage.setItem("smt_home_anskey", JSON.stringify(homeAnsKey));}catch(e){}
+  openDB().then(()=>dbMiscSet("home_anskey", homeAnsKey)).catch(()=>{});
 }
 
 // Listen to Q number change
@@ -2366,12 +2485,11 @@ document.addEventListener('DOMContentLoaded', ()=>{
 function loadHomePdf(e) {
   const f = e.target.files[0]; if (!f) return;
   const reader = new FileReader();
-  reader.onload = ev => {
+  reader.onload = async ev => {
     const dataUrl = ev.target.result;
     homePdf.data = dataUrl;
     homePdf.name = f.name;
-    // Save to localStorage
-    try { localStorage.setItem('smt_home_pdf_data', dataUrl); localStorage.setItem('smt_home_pdf_name', f.name); } catch(err) {}
+    try { await dbMiscSet('home_pdf_data', dataUrl); await dbMiscSet('home_pdf_name', f.name); } catch(err) {}
     initHomePdf(dataUrl, f.name);
   };
   reader.readAsDataURL(f);
@@ -2402,23 +2520,23 @@ function homePdfNext() {
   homePdf.page++; renderPageOnCanvas(homePdf, 'homePdfCanvas', 'homePdfPageInfo', null);
 }
 
-function clearHomePdf() {
+async function clearHomePdf() {
   homePdf = { doc:null, page:1, total:1, rendering:false, data:null, name:'' };
   homeAnsKey = {};
-  try { localStorage.removeItem('smt_home_pdf_data'); localStorage.removeItem('smt_home_pdf_name'); localStorage.removeItem('smt_home_anskey'); } catch(e){}
+  try { await dbMiscSet('home_pdf_data',null); await dbMiscSet('home_pdf_name',null); await dbMiscSet('home_anskey',{}); } catch(e){}
   document.getElementById('homePdfEmpty').style.display = 'block';
   document.getElementById('homePdfViewer').style.display = 'none';
   document.getElementById('homePdfCard').style.display = 'block';
   document.getElementById('homePdfCanvas').width = 0;
 }
 
-function editPdfQCount(id){
+async function editPdfQCount(id){
   document.querySelectorAll('[id^="pdfmenu_"]').forEach(m=>m.style.display='none');
   // Load this PDF's answer key into homeAnsKey and open home page PDF viewer
   try {
-    const pdfList = JSON.parse(localStorage.getItem('smt_pdf_list')||'[]');
+    const pdfList = await loadPdfMeta();
     const item = pdfList.find(p=>p.id===id);
-    const data = localStorage.getItem('smt_pdf_data_'+id);
+    const data = await getPdfData(id);
     if(!item || !data){ toast('PDF not found','error'); return; }
     // Load into home PDF viewer
     homeAnsKey = item.ansKey || {};
@@ -2435,16 +2553,16 @@ function editPdfQCount(id){
   } catch(e){ toast('Error loading PDF','error'); }
 }
 
-function useHomePdfInTest() {
+async function useHomePdfInTest() {
   if (!homePdf.data) return;
   const editId = window._editingPdfId;
   if(editId){
     // Updating existing PDF answer key
     try {
-      let pdfList = JSON.parse(localStorage.getItem('smt_pdf_list')||'[]');
+      let pdfList = await loadPdfMeta();
       const idx = pdfList.findIndex(p=>p.id===editId);
       if(idx>=0) pdfList[idx].ansKey = homeAnsKey;
-      localStorage.setItem('smt_pdf_list', JSON.stringify(pdfList));
+      await savePdfMeta(pdfList);
       if(selectedPdfId===editId) {} // homeAnsKey already updated
     } catch(e){}
     window._editingPdfId = null;
@@ -2455,25 +2573,25 @@ function useHomePdfInTest() {
   }
   // New PDF — save to list
   try {
-    let pdfList = JSON.parse(localStorage.getItem('smt_pdf_list')||'[]');
+    let pdfList = await loadPdfMeta();
     const id = Date.now();
-    localStorage.setItem('smt_pdf_data_'+id, homePdf.data);
+    await savePdfData(id, homePdf.data);
     pdfList.push({
       id, name: homePdf.name, ansKey: homeAnsKey,
       added: new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short'})
     });
-    localStorage.setItem('smt_pdf_list', JSON.stringify(pdfList));
+    await savePdfMeta(pdfList);
   } catch(e){ toast('Storage full! Remove old PDFs.','error'); return; }
   clearHomePdf();
   toast('✅ PDF saved to Test list!','success');
   goPage('setup');
 }
 
-// Restore saved PDF on load
+// Restore saved PDF on load (handled by initApp)
 (function restoreHomePdf(){
   try {
-    const data = localStorage.getItem('smt_home_pdf_data');
-    const name = localStorage.getItem('smt_home_pdf_name');
+    const data = null; // migrated to IndexedDB
+    const name = null;
     if (data && name) { homePdf.data = data; homePdf.name = name; initHomePdf(data, name); }
   } catch(e) {}
 })();
