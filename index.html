@@ -2175,7 +2175,7 @@ function confirmPdfQCount(){
     id:Date.now()+i,
     qText:`Q${i+1}`,
     options:{A:'A',B:'B',C:'C',D:'D'},
-    correct: homeAnsKey[i+1] || 'A',
+    correct: homeAnsKey[i+1] || '',
     subject:'', explanation:'', expMedia:[], image:null, pdfOnly:true
   }));
   launchExamView();
@@ -2232,6 +2232,12 @@ function launchExamView(){
 function startPdfSaveFlow(){
   pdfSaveQueue = testQ.map((q,i)=>({qIndex:i, userAnswer:answers[i]||''}));
   pdfSaveCurrent = 0;
+  // Reset so old answer key doesn't pre-fill
+  const freshKey = {};
+  pdfSaveQueue.forEach(item=>{
+    if(homeAnsKey[item.qIndex+1]) freshKey[item.qIndex+1] = homeAnsKey[item.qIndex+1];
+  });
+  homeAnsKey = freshKey;
   openNextPdfSave();
 }
 
@@ -2635,6 +2641,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
 /* ---- HOME PAGE PDF ---- */
 function loadHomePdf(e) {
   const f = e.target.files[0]; if (!f) return;
+  homeAnsKey = {}; // Clear old answer key for new PDF
   const reader = new FileReader();
   reader.onload = async ev => {
     const dataUrl = ev.target.result;
