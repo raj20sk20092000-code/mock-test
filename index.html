@@ -589,7 +589,14 @@ input,textarea,select,button{font-family:inherit;}
   </div>
 
   <!-- Q dots -->
-  <div class="qdots" id="qdots"></div>
+  <!-- Q dots with shutter -->
+  <div style="flex-shrink:0;background:var(--s1);border-bottom:1px solid var(--border);">
+    <div onclick="toggleQdots()" style="display:flex;align-items:center;justify-content:space-between;padding:5px 14px;cursor:pointer;user-select:none;">
+      <span style="font-size:0.7rem;font-weight:700;color:var(--muted);" id="qdotsLabel">Questions</span>
+      <span id="qdotsArrow" style="font-size:0.9rem;color:var(--muted);">∧</span>
+    </div>
+    <div class="qdots" id="qdots"></div>
+  </div>
 
   <!-- Split body -->
   <div class="split-body" id="splitBody">
@@ -2736,6 +2743,17 @@ function loadExamPdf(dataUrl) {
     });
   });
 }
+let qdotsOpen = true;
+function toggleQdots(){
+  qdotsOpen = !qdotsOpen;
+  const dots = document.getElementById('qdots');
+  const arrow = document.getElementById('qdotsArrow');
+  const label = document.getElementById('qdotsLabel');
+  if(dots) dots.style.display = qdotsOpen ? '' : 'none';
+  if(arrow) arrow.textContent = qdotsOpen ? '∧' : '∨';
+  if(label) label.textContent = qdotsOpen ? 'Questions' : 'Show Questions';
+}
+
 let qShutterOpen = true;
 function toggleQShutter(){
   qShutterOpen = !qShutterOpen;
