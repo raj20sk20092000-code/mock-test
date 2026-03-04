@@ -1177,7 +1177,7 @@ function renderBank(){
   const list=questions.filter(q=>q.qText.toLowerCase().includes(kw)||(q.subject||'').toLowerCase().includes(kw));
   if(!list.length){c.innerHTML=`<div class="empty"><div class="empty-icon">📭</div><h3>${questions.length?'No matches':'Bank is empty'}</h3></div>`;return;}
   c.innerHTML=list.map((q,i)=>`
-    <div class="q-item">
+    <div class="q-item" style="position:relative;">
       <div class="q-num">${i+1}</div>
       <div class="q-body">
         ${q.image?`<img src="${q.image}" class="q-img-thumb" onclick="openImgViewer('${q.image}')" />`:''}
@@ -1188,10 +1188,43 @@ function renderBank(){
           ${q.expMedia&&q.expMedia.length?`<span class="chip m">📎 ${q.expMedia.length}</span>`:''}
         </div>
       </div>
-      <span class="q-del" onclick="delQ(${q.id})">🗑️</span>
+      <button onclick="event.stopPropagation();toggleQMenu(${q.id})" style="background:none;border:none;color:var(--muted);font-size:1.3rem;cursor:pointer;padding:4px 8px;line-height:1;flex-shrink:0;">⋮</button>
+      <div id="qmenu_${q.id}" style="display:none;position:absolute;right:8px;top:36px;background:var(--s3);border:1px solid var(--border);border-radius:10px;z-index:100;min-width:130px;box-shadow:0 4px 20px rgba(0,0,0,.4);overflow:hidden;">
+        <div onclick="event.stopPropagation();editQ(${q.id})" style="padding:12px 16px;font-size:0.85rem;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px;">✏️ Edit</div>
+        <div style="height:1px;background:var(--border);"></div>
+        <div onclick="event.stopPropagation();delQ(${q.id})" style="padding:12px 16px;font-size:0.85rem;font-weight:600;color:var(--red);cursor:pointer;display:flex;align-items:center;gap:8px;">🗑️ Delete</div>
+      </div>
     </div>`).join('');
 }
-function delQ(id){questions=questions.filter(q=>q.id!==id);save();renderBank();}
+
+function toggleQMenu(id){
+  document.querySelectorAll('[id^="qmenu_"]').forEach(m=>{
+    if(m.id!=='qmenu_'+id) m.style.display='none';
+  });
+  const m=document.getElementById('qmenu_'+id);
+  if(m) m.style.display=m.style.display==='none'?'block':'none';
+}
+
+function editQ(id){
+  document.querySelectorAll('[id^="qmenu_"]').forEach(m=>m.style.display='none');
+  const q=questions.find(x=>x.id===id);
+  if(!q) return;
+  window._editOrigId = id;
+  openManualPopup();
+  setTimeout(()=>{
+    const qEl=document.getElementById('m_q'); if(qEl) qEl.value=q.qText||'';
+    const aEl=document.getElementById('m_a'); if(aEl) aEl.value=q.options?.A||'';
+    const bEl=document.getElementById('m_b'); if(bEl) bEl.value=q.options?.B||'';
+    const cEl=document.getElementById('m_c'); if(cEl) cEl.value=q.options?.C||'';
+    const dEl=document.getElementById('m_d'); if(dEl) dEl.value=q.options?.D||'';
+    const expEl=document.getElementById('m_exp'); if(expEl) expEl.value=q.explanation||'';
+  },50);
+}
+
+function delQ(id){
+  document.querySelectorAll('[id^="qmenu_"]').forEach(m=>m.style.display='none');
+  questions=questions.filter(q=>q.id!==id);save();renderBank();
+}
 function clearAll(){if(!questions.length)return;if(!confirm(`${questions.length} questions delete?`))return;questions=[];save();renderBank();}
 function updateAddPageStats(){
   const s=document.getElementById('addPageStats'),r=document.getElementById('addStatRow');
@@ -1368,13 +1401,20 @@ function updatePdfTestStatus(){
   el.innerHTML = `
     <div style="font-size:0.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Select PDF</div>
     ${pdfList.map(p=>`
-      <div onclick="selectTestPdf(${p.id})" id="pdfitem_${p.id}" style="display:flex;align-items:center;gap:10px;padding:10px 13px;border-radius:9px;border:2px solid ${testPdfData&&selectedPdfId===p.id?'var(--red)':'var(--border)'};background:${testPdfData&&selectedPdfId===p.id?'rgba(239,68,68,.1)':'var(--s2)'};margin-bottom:8px;cursor:pointer;">
+      <div onclick="selectTestPdf(${p.id})" id="pdfitem_${p.id}" style="display:flex;align-items:center;gap:10px;padding:10px 13px;border-radius:9px;border:2px solid ${testPdfData&&selectedPdfId===p.id?'var(--red)':'var(--border)'};background:${testPdfData&&selectedPdfId===p.id?'rgba(239,68,68,.1)':'var(--s2)'};margin-bottom:8px;cursor:pointer;position:relative;">
         <span style="font-size:1.3rem;">📄</span>
         <div style="flex:1;overflow:hidden;">
           <div style="font-size:0.82rem;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.name}</div>
           <div style="font-size:0.68rem;color:var(--muted);">${Object.keys(p.ansKey||{}).length} answers marked · ${p.added}</div>
         </div>
-        <button onclick="event.stopPropagation();deleteTestPdf(${p.id})" style="background:none;border:none;color:var(--muted);font-size:0.9rem;cursor:pointer;">🗑️</button>
+        <button onclick="event.stopPropagation();togglePdfMenu(${p.id})" style="background:none;border:none;color:var(--muted);font-size:1.2rem;cursor:pointer;padding:4px 8px;line-height:1;">⋮</button>
+        <div id="pdfmenu_${p.id}" style="display:none;position:absolute;right:8px;top:38px;background:var(--s3);border:1px solid var(--border);border-radius:10px;z-index:100;min-width:130px;box-shadow:0 4px 20px rgba(0,0,0,.4);overflow:hidden;">
+          <div onclick="event.stopPropagation();viewTestPdf(${p.id})" style="padding:12px 16px;font-size:0.85rem;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px;">👁️ View</div>
+          <div style="height:1px;background:var(--border);"></div>
+          <div onclick="event.stopPropagation();replaceTestPdf(${p.id})" style="padding:12px 16px;font-size:0.85rem;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px;">🔄 Replace</div>
+          <div style="height:1px;background:var(--border);"></div>
+          <div onclick="event.stopPropagation();deleteTestPdf(${p.id})" style="padding:12px 16px;font-size:0.85rem;font-weight:600;color:var(--red);cursor:pointer;display:flex;align-items:center;gap:8px;">🗑️ Delete</div>
+        </div>
       </div>
     `).join('')}
   `;
@@ -1394,6 +1434,54 @@ function selectTestPdf(id){
     }
   } catch(e){}
   updatePdfTestStatus();
+}
+
+function togglePdfMenu(id){
+  // Close all other menus first
+  document.querySelectorAll('[id^="pdfmenu_"]').forEach(m=>{
+    if(m.id!=='pdfmenu_'+id) m.style.display='none';
+  });
+  const m = document.getElementById('pdfmenu_'+id);
+  if(m) m.style.display = m.style.display==='none' ? 'block' : 'none';
+}
+
+// Close menus on outside click
+document.addEventListener('click', ()=>{
+  document.querySelectorAll('[id^="pdfmenu_"]').forEach(m=>m.style.display='none');
+  document.querySelectorAll('[id^="qmenu_"]').forEach(m=>m.style.display='none');
+});
+
+function viewTestPdf(id){
+  document.querySelectorAll('[id^="pdfmenu_"]').forEach(m=>m.style.display='none');
+  try {
+    const data = localStorage.getItem('smt_pdf_data_'+id);
+    if(data) openPdfBlob(data);
+  } catch(e){ toast('Could not open PDF','error'); }
+}
+
+function replaceTestPdf(id){
+  document.querySelectorAll('[id^="pdfmenu_"]').forEach(m=>m.style.display='none');
+  // Create file input and trigger
+  const inp = document.createElement('input');
+  inp.type='file'; inp.accept='application/pdf';
+  inp.onchange = e=>{
+    const f=e.target.files[0]; if(!f) return;
+    const r=new FileReader();
+    r.onload=ev=>{
+      try {
+        localStorage.setItem('smt_pdf_data_'+id, ev.target.result);
+        let pdfList = JSON.parse(localStorage.getItem('smt_pdf_list')||'[]');
+        const idx = pdfList.findIndex(p=>p.id===id);
+        if(idx>=0) pdfList[idx].name = f.name;
+        localStorage.setItem('smt_pdf_list', JSON.stringify(pdfList));
+        if(selectedPdfId===id) testPdfData=ev.target.result;
+        toast('✅ PDF replaced!','success');
+        updatePdfTestStatus();
+      } catch(e){ toast('Storage full!','error'); }
+    };
+    r.readAsDataURL(f);
+  };
+  inp.click();
 }
 
 function deleteTestPdf(id){
