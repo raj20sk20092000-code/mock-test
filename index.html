@@ -1003,7 +1003,55 @@ function save(){
   saveQuestions();
   document.getElementById('topBadge').textContent=questions.length+' Q';
   updateSubjectSel();updateSetupStats();updateAddPageStats();
+  checkAutoBackup();
 }
+
+/* ===== SMART AUTO BACKUP ===== */
+const BACKUP_INTERVAL_QUESTIONS = 10; // every 10 new questions
+const BACKUP_INTERVAL_MS = 24 * 60 * 60 * 1000; // every 24 hours
+
+function checkAutoBackup(){
+  try{
+    const lastCount = parseInt(localStorage.getItem('smt_backup_count')||'0');
+    const lastTime  = parseInt(localStorage.getItem('smt_backup_time')||'0');
+    const now = Date.now();
+    const timeDiff = now - lastTime;
+    const countDiff = questions.length - lastCount;
+
+    if(countDiff >= BACKUP_INTERVAL_QUESTIONS || timeDiff >= BACKUP_INTERVAL_MS){
+      doAutoBackup();
+    }
+  }catch(e){}
+}
+
+function doAutoBackup(){
+  if(!questions.length) return;
+  try{
+    const date = new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'2-digit'}).replace(/ /g,'-');
+    const data = JSON.stringify(questions, null, 2);
+    const a = document.createElement('a');
+    a.href = 'data:application/json,' + encodeURIComponent(data);
+    a.download = `SmartMock_Backup_${date}.json`;
+    a.click();
+    localStorage.setItem('smt_backup_count', questions.length);
+    localStorage.setItem('smt_backup_time', Date.now());
+    toast('💾 Auto backup saved!', 'success');
+  }catch(e){}
+}
+
+// Backup on page close/hide
+document.addEventListener('visibilitychange', ()=>{
+  if(document.visibilityState === 'hidden' && questions.length){
+    try{
+      const lastTime = parseInt(localStorage.getItem('smt_backup_time')||'0');
+      const hoursSince = (Date.now() - lastTime) / (1000*60*60);
+      if(hoursSince >= 6){ // backup if 6+ hours since last
+        doAutoBackup();
+      }
+    }catch(e){}
+  }
+});
+
 
 /* ===== Init ===== */
 async function initApp(){
@@ -1485,9 +1533,13 @@ function catPopupCancel(){
 /* ===== EXPORT / IMPORT ===== */
 function exportQ(){
   if(!questions.length){toast('No questions','error');return;}
+  const date = new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'2-digit'}).replace(/ /g,'-');
   const a=document.createElement('a');
   a.href='data:application/json,'+encodeURIComponent(JSON.stringify(questions,null,2));
-  a.download='mock-questions.json';a.click();toast('✅ Exported!','success');
+  a.download=`SmartMock_Backup_${date}.json`;a.click();
+  localStorage.setItem('smt_backup_count', questions.length);
+  localStorage.setItem('smt_backup_time', Date.now());
+  toast('✅ Exported!','success');
 }
 function importQ(){
   const inp=document.createElement('input');inp.type='file';inp.accept='.json';
