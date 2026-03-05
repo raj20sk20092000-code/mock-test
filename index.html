@@ -706,6 +706,27 @@ input,textarea,select,button{font-family:inherit;}
   </div>
 </div>
 
+<!-- SRS SMART REVIEW FULL PAGE -->
+<div id="srsView" style="display:none;position:fixed;inset:0;z-index:4000;background:var(--bg);flex-direction:column;">
+  <!-- Top bar -->
+  <div class="exam-bar">
+    <button onclick="closeSrsView()" style="background:none;border:none;color:var(--text);font-size:1.3rem;cursor:pointer;padding:0 6px;line-height:1;">←</button>
+    <span style="font-size:0.88rem;font-weight:800;color:var(--text);">🧠 Smart Review</span>
+    <div style="flex:1;"></div>
+    <span id="srsInterval" style="font-size:0.7rem;font-weight:700;padding:2px 8px;background:var(--s2);border-radius:6px;margin-right:6px;"></span>
+    <span id="srsCounter" style="font-size:0.75rem;color:var(--muted);font-weight:700;"></span>
+  </div>
+  <!-- Progress bar -->
+  <div style="flex-shrink:0;background:var(--s2);height:4px;">
+    <div id="srsProgress" style="background:linear-gradient(90deg,#7c3aed,#4f7fff);height:4px;width:0%;transition:width .4s;"></div>
+  </div>
+  <!-- Scrollable body -->
+  <div style="flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding:12px 14px 32px;min-height:0;" id="srsScrollBody">
+    <div id="srsQBody"></div>
+    <div id="srsFinish" style="display:none;"></div>
+  </div>
+</div>
+
 <!-- RESULT VIEW -->
 <div id="resultView" style="display: none;">
   <!-- PDF Review Split View -->
@@ -1001,31 +1022,7 @@ input,textarea,select,button{font-family:inherit;}
 </div>
 
 <!-- SRS Smart Review Popup -->
-<div class="popup-overlay" id="srsPopup">
-  <div class="popup-sheet" style="max-height:92vh;display:flex;flex-direction:column;">
-    <div class="popup-handle"></div>
-    <!-- Header -->
-    <div style="padding:12px 16px 8px;flex-shrink:0;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-        <span style="font-size:0.88rem;font-weight:800;">🧠 Smart Review</span>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <span id="srsInterval" style="font-size:0.72rem;font-weight:700;padding:2px 8px;background:var(--s2);border-radius:6px;"></span>
-          <span id="srsCounter" style="font-size:0.75rem;color:var(--muted);font-weight:700;"></span>
-          <button onclick="closePopup('srsPopup')" class="popup-close">✕</button>
-        </div>
-      </div>
-      <!-- Progress bar -->
-      <div style="background:var(--s2);border-radius:4px;height:5px;">
-        <div id="srsProgress" style="background:linear-gradient(90deg,#7c3aed,#4f7fff);height:5px;border-radius:4px;width:0%;transition:width .4s;"></div>
-      </div>
-    </div>
-    <!-- Question body -->
-    <div style="flex:1;overflow-y:auto;padding:8px 16px 16px;-webkit-overflow-scrolling:touch;">
-      <div id="srsQBody"></div>
-      <div id="srsFinish" style="display:none;"></div>
-    </div>
-  </div>
-</div>
+<div class="popup-overlay" id="srsPopup" style="display:none;"></div>
 
 <!-- PDF Stats Popup -->
 <div class="popup-overlay" id="pdfStatsPopup">
@@ -1711,6 +1708,17 @@ async function saveSrsSettingsAndClose(){
   toast('✅ Settings saved!','success');
 }
 
+function openSrsView(){
+  const el = document.getElementById('srsView');
+  if(el){ el.style.display='flex'; }
+}
+
+function closeSrsView(){
+  const el = document.getElementById('srsView');
+  if(el){ el.style.display='none'; }
+  renderPracticeSets();
+}
+
 function srsDueToday(){
   const today = srsToday();
   // Bank questions
@@ -1914,7 +1922,7 @@ async function startSmartReview(){
   }));
 
   srsSession = { queue, current:0, results:[], startTime:Date.now() };
-  openPopup('srsPopup');
+  openSrsView();
   renderSrsCard();
 }
 
@@ -1933,10 +1941,25 @@ function renderSrsCard(){
   document.getElementById('srsInterval').textContent = isNew ? '✨ New' : `⏰ ${intervalLabel}`;
   document.getElementById('srsInterval').style.color = isNew ? '#4f7fff' : 'var(--gold)';
 
+  // Scroll to top
+  const scrollBody = document.getElementById('srsScrollBody');
+  if(scrollBody) scrollBody.scrollTop = 0;
+
   const qBody = document.getElementById('srsQBody');
+  const ratingHTML = `
+    <div id="srsAnswerReveal" style="display:none;margin-top:12px;">
+      <div style="height:1px;background:var(--border);margin-bottom:10px;"></div>
+      <div id="srsExplanationBox"></div>
+      <div style="font-size:0.7rem;font-weight:700;color:var(--muted);margin-bottom:6px;">Kitna yaad tha?</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+        <button onclick="srsRate(0)" style="padding:10px 4px;border-radius:10px;border:none;background:rgba(239,68,68,.15);color:var(--red);font-weight:800;font-size:0.8rem;cursor:pointer;line-height:1.4;">❌ Again<br><span style="font-size:0.65rem;font-weight:600;opacity:.8;">Nahi aaya</span></button>
+        <button onclick="srsRate(1)" style="padding:10px 4px;border-radius:10px;border:none;background:rgba(245,158,11,.1);color:var(--gold);font-weight:800;font-size:0.8rem;cursor:pointer;line-height:1.4;">😅 Hard<br><span style="font-size:0.65rem;font-weight:600;opacity:.8;">Struggle hua</span></button>
+        <button onclick="srsRate(2)" style="padding:10px 4px;border-radius:10px;border:none;background:rgba(16,185,129,.12);color:var(--green);font-weight:800;font-size:0.8rem;cursor:pointer;line-height:1.4;">✅ Good<br><span style="font-size:0.65rem;font-weight:600;opacity:.8;" id="srsGoodDays">+?d</span></button>
+        <button onclick="srsRate(3)" style="padding:10px 4px;border-radius:10px;border:none;background:rgba(79,127,255,.12);color:#4f7fff;font-weight:800;font-size:0.8rem;cursor:pointer;line-height:1.4;">⚡ Easy<br><span style="font-size:0.65rem;font-weight:600;opacity:.8;" id="srsEasyDays">+?d</span></button>
+      </div>
+    </div>`;
 
   if(q.isPdf){
-    // PDF question — show canvas + ABCD
     qBody.innerHTML = `
       <div style="font-size:0.72rem;color:var(--muted);font-weight:700;margin-bottom:6px;">📄 ${q.pdfName||'PDF'} — Page ${q.pageNum}</div>
       <div style="border-radius:10px;overflow:hidden;border:1px solid var(--border);background:#111;margin-bottom:10px;position:relative;">
@@ -1948,22 +1971,27 @@ function renderSrsCard(){
         </div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;" id="srsOptions"></div>
-      <div id="srsAnswerReveal" style="display:none;margin-top:12px;"></div>
+      ${ratingHTML}
     `;
-    // Render PDF page
     srsSession.pdfPage = q.pageNum;
     renderSrsPdfPage(q.pdfId, q.pageNum);
     renderSrsOptions(q);
   } else {
-    // Bank question
     qBody.innerHTML = `
-      ${q.image ? `<img src="${q.image}" style="width:100%;max-height:180px;object-fit:contain;border-radius:10px;border:1px solid var(--border);background:#000;margin-bottom:10px;" onclick="openImgViewer('${q.image}')" />` : ''}
-      <div style="font-size:0.88rem;font-weight:600;color:var(--text);margin-bottom:12px;line-height:1.5;">${q.qText||'Question'}</div>
+      ${q.image ? `<img src="${q.image}" style="width:100%;max-height:200px;object-fit:contain;border-radius:10px;border:1px solid var(--border);background:#000;margin-bottom:10px;" onclick="openImgViewer('${q.image}')" />` : ''}
+      <div style="font-size:0.88rem;font-weight:600;color:var(--text);margin-bottom:12px;line-height:1.6;">${q.qText||'Question'}</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;" id="srsOptions"></div>
-      <div id="srsAnswerReveal" style="display:none;margin-top:12px;"></div>
+      ${ratingHTML}
     `;
     renderSrsOptions(q);
   }
+
+  // Update day counts
+  const g = srsNextInterval(q.id, 2), e = srsNextInterval(q.id, 3);
+  const gEl = document.getElementById('srsGoodDays');
+  const eEl = document.getElementById('srsEasyDays');
+  if(gEl) gEl.textContent = `+${g}d`;
+  if(eEl) eEl.textContent = `+${e}d`;
 
   srsSession.qStart = Date.now();
 }
@@ -1976,13 +2004,23 @@ function renderSrsPdfPage(pdfId, pageNum){
   if(!canvas) return;
   if(infoEl) infoEl.textContent = `${pageNum} / ${doc.numPages}`;
   doc.getPage(pageNum).then(page => {
-    const vp = page.getViewport({scale:1.5});
     const dpr = window.devicePixelRatio||1;
-    canvas.width = vp.width*dpr; canvas.height = vp.height*dpr;
-    canvas.style.width = vp.width+'px'; canvas.style.height = vp.height+'px';
+    const containerW = canvas.parentElement.clientWidth || window.innerWidth - 32;
+    const vp0 = page.getViewport({scale:1});
+
+    // For landscape PDFs (16x12) — limit height to 38% of screen
+    const maxH = window.innerHeight * 0.38;
+    const scaleByW = containerW / vp0.width;
+    const scaleByH = maxH / vp0.height;
+    const fitScale = Math.min(scaleByW, scaleByH);
+
+    const vp = page.getViewport({scale: fitScale * dpr});
+    canvas.width = vp.width; canvas.height = vp.height;
+    canvas.style.width = Math.round(vp.width/dpr)+'px';
+    canvas.style.height = Math.round(vp.height/dpr)+'px';
     const ctx = canvas.getContext('2d');
     ctx.setTransform(dpr,0,0,dpr,0,0);
-    page.render({canvasContext:ctx, viewport:vp});
+    page.render({canvasContext:ctx, viewport: page.getViewport({scale: fitScale})});
   }).catch(()=>{});
 }
 
@@ -2011,7 +2049,7 @@ function renderSrsOptions(q){
   if(!el) return;
   srsSelectedAns = '';
   el.innerHTML = ['A','B','C','D'].map(k=>`
-    <button onclick="srsTapOption('${k}')" id="srsOpt_${k}" style="padding:10px;border-radius:10px;border:2px solid var(--border);background:var(--s2);color:var(--text);font-size:0.82rem;font-weight:600;cursor:pointer;text-align:left;transition:all .15s;">
+    <button onclick="srsTapOption('${k}')" id="srsOpt_${k}" style="padding:8px 6px;border-radius:9px;border:2px solid var(--border);background:var(--s2);color:var(--text);font-size:0.8rem;font-weight:600;cursor:pointer;text-align:left;transition:all .15s;line-height:1.3;">
       <span style="font-weight:800;color:var(--acc);">${k}.</span> ${q.options?.[k]||k}
     </button>`).join('');
 }
@@ -2039,19 +2077,18 @@ function srsTapOption(opt){
     }
   });
   
-  // Show explanation + quality buttons
+  // Show answer reveal + scroll down
   const revealEl = document.getElementById('srsAnswerReveal');
   if(revealEl){
     revealEl.style.display='block';
-    revealEl.innerHTML = `
-      ${q.explanation ? `<div style="font-size:0.78rem;color:var(--muted);padding:8px 10px;background:var(--s2);border-radius:8px;margin-bottom:10px;">💡 ${q.explanation}</div>` : ''}
-      <div style="font-size:0.72rem;font-weight:700;color:var(--muted);margin-bottom:6px;">How well did you know this?</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
-        <button onclick="srsRate(0)" style="padding:10px;border-radius:10px;border:none;background:rgba(239,68,68,.15);color:var(--red);font-weight:800;font-size:0.8rem;cursor:pointer;">😰 Wrong<br><span style="font-size:0.65rem;font-weight:600;">Again tomorrow</span></button>
-        <button onclick="srsRate(1)" style="padding:10px;border-radius:10px;border:none;background:rgba(245,158,11,.1);color:var(--gold);font-weight:800;font-size:0.8rem;cursor:pointer;">😅 Hard<br><span style="font-size:0.65rem;font-weight:600;">Review soon</span></button>
-        <button onclick="srsRate(2)" style="padding:10px;border-radius:10px;border:none;background:rgba(16,185,129,.12);color:var(--green);font-weight:800;font-size:0.8rem;cursor:pointer;">😊 Good<br><span style="font-size:0.65rem;font-weight:600;">+${srsNextInterval(srsSession.queue[srsSession.current].id, 2)}d</span></button>
-        <button onclick="srsRate(3)" style="padding:10px;border-radius:10px;border:none;background:rgba(79,127,255,.12);color:#4f7fff;font-weight:800;font-size:0.8rem;cursor:pointer;">🚀 Easy<br><span style="font-size:0.65rem;font-weight:600;">+${srsNextInterval(srsSession.queue[srsSession.current].id, 3)}d</span></button>
-      </div>`;
+    // Show explanation in the box
+    const expBox = document.getElementById('srsExplanationBox');
+    if(expBox) expBox.innerHTML = q.explanation ? `<div style="font-size:0.78rem;color:var(--muted);padding:8px 10px;background:var(--s2);border-radius:8px;margin-bottom:8px;line-height:1.5;">💡 ${q.explanation}</div>` : '';
+    // Scroll to reveal rating buttons
+    setTimeout(()=>{
+      const scrollBody = document.getElementById('srsScrollBody');
+      if(scrollBody) scrollBody.scrollTo({top: scrollBody.scrollHeight, behavior:'smooth'});
+    }, 100);
   }
 }
 
@@ -2093,12 +2130,13 @@ function finishSrsSession(){
       <div style="font-size:1.8rem;font-weight:800;color:${col};">${pct}%</div>
       <div style="font-size:0.82rem;color:var(--muted);margin-top:4px;">${correct}/${results.length} correct · ⏱️ ${mins>0?mins+'m ':''}${secs}s</div>
       <div style="display:flex;gap:8px;justify-content:center;margin-top:12px;flex-wrap:wrap;">
-        <span style="font-size:0.75rem;padding:4px 10px;background:rgba(16,185,129,.1);border:1px solid var(--green);border-radius:7px;color:var(--green);">😊 ${results.filter(r=>r.quality===2).length} Good</span>
-        <span style="font-size:0.75rem;padding:4px 10px;background:rgba(239,68,68,.1);border:1px solid var(--red);border-radius:7px;color:var(--red);">😰 ${results.filter(r=>r.quality===0).length} Wrong</span>
-        <span style="font-size:0.75rem;padding:4px 10px;background:rgba(79,127,255,.1);border:1px solid #4f7fff;border-radius:7px;color:#4f7fff;">🚀 ${results.filter(r=>r.quality===3).length} Easy</span>
+        <span style="font-size:0.75rem;padding:4px 10px;background:rgba(79,127,255,.1);border:1px solid #4f7fff;border-radius:7px;color:#4f7fff;">⚡ ${results.filter(r=>r.quality===3).length} Easy</span>
+        <span style="font-size:0.75rem;padding:4px 10px;background:rgba(16,185,129,.1);border:1px solid var(--green);border-radius:7px;color:var(--green);">✅ ${results.filter(r=>r.quality===2).length} Good</span>
+        <span style="font-size:0.75rem;padding:4px 10px;background:rgba(245,158,11,.1);border:1px solid var(--gold);border-radius:7px;color:var(--gold);">😅 ${results.filter(r=>r.quality===1).length} Hard</span>
+        <span style="font-size:0.75rem;padding:4px 10px;background:rgba(239,68,68,.1);border:1px solid var(--red);border-radius:7px;color:var(--red);">❌ ${results.filter(r=>r.quality===0).length} Again</span>
       </div>
       <div style="margin-top:14px;font-size:0.78rem;color:var(--muted);">Next review scheduled! 🧠</div>
-      <button onclick="closePopup('srsPopup');renderPracticeSets();" style="margin-top:14px;width:100%;padding:12px;background:linear-gradient(135deg,#7c3aed,#4f7fff);color:#fff;border:none;border-radius:10px;font-size:0.9rem;font-weight:800;cursor:pointer;">✅ Done</button>
+      <button onclick="closeSrsView();" style="margin-top:14px;width:100%;padding:12px;background:linear-gradient(135deg,#7c3aed,#4f7fff);color:#fff;border:none;border-radius:10px;font-size:0.9rem;font-weight:800;cursor:pointer;">✅ Done</button>
     </div>`;
   document.getElementById('srsFinish').style.display='block';
   document.getElementById('srsQBody').style.display='none';
@@ -3950,11 +3988,18 @@ function renderPageOnCanvas(pdfObj, canvasId, pageInfoId, cb) {
     const dpr = window.devicePixelRatio || 2;
     const containerW = canvas.parentElement.clientWidth || window.innerWidth;
     const vp0 = page.getViewport({ scale: 1 });
-    const scale = (containerW / vp0.width) * dpr;
+
+    // Max height = 55% of screen height (prevents landscape PDF from taking full screen)
+    const maxH = window.innerHeight * 0.55;
+    let scaleByW = containerW / vp0.width;
+    let scaleByH = maxH / vp0.height;
+    const fitScale = Math.min(scaleByW, scaleByH); // fit both width AND height
+
+    const scale = fitScale * dpr;
     const vp = page.getViewport({ scale });
     canvas.width = vp.width;
     canvas.height = vp.height;
-    canvas.style.width = containerW + 'px';
+    canvas.style.width = Math.round(vp.width / dpr) + 'px';
     canvas.style.height = Math.round(vp.height / dpr) + 'px';
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, canvas.width, canvas.height);
