@@ -1638,9 +1638,10 @@ async function finishImport(action){
     // Add all including duplicates
     questions = [...questions, ...newQ, ...dupeQ];
   } else if(action === 'replace'){
-    // Remove existing duplicates, add imported ones
-    const dupeTexts = dupeQ.map(q=>(q.qText||'').trim().toLowerCase().slice(0,60));
-    questions = questions.filter(q=>!dupeTexts.includes((q.qText||'').trim().toLowerCase().slice(0,60)));
+    function normalizeQ(txt){ return (txt||'').toLowerCase().replace(/[^a-z0-9\u0900-\u097f]/g,'').slice(0,80); }
+    const dupeIds = new Set(dupeQ.map(q=>q.id));
+    const dupeNorms = new Set(dupeQ.map(q=>normalizeQ(q.qText)));
+    questions = questions.filter(q=> !dupeIds.has(q.id) && !dupeNorms.has(normalizeQ(q.qText)));
     questions = [...questions, ...newQ, ...dupeQ];
   }
   save();
@@ -2547,17 +2548,28 @@ function importQ(){
         // Version 2 format
         if(d.version===2){
           if(d.questions&&d.questions.length){
-            // Duplicate detection — match by qText similarity
-            const existing = questions.map(q=>(q.qText||'').trim().toLowerCase().slice(0,60));
+            // Duplicate detection — multi-strategy matching
+            function normalizeQ(txt){
+              return (txt||'').toLowerCase()
+                .replace(/[^a-z0-9\u0900-\u097f]/g,'') // remove punctuation, keep hindi+english+numbers
+                .slice(0,80);
+            }
+            // Strategy 1: normalized qText
+            const existingNorm = questions.map(q=>normalizeQ(q.qText));
+            // Strategy 2: same id
+            const existingIds = new Set(questions.map(q=>q.id));
+
             const newQ = [], dupeQ = [];
             d.questions.forEach(q=>{
-              const key = (q.qText||'').trim().toLowerCase().slice(0,60);
-              if(key && existing.includes(key)) dupeQ.push(q);
+              const norm = normalizeQ(q.qText);
+              const isDupe = existingIds.has(q.id) || 
+                            (norm.length > 10 && existingNorm.includes(norm));
+              if(isDupe) dupeQ.push(q);
               else newQ.push(q);
             });
 
-            if(dupeQ.length > 0){
-              // Show duplicate popup
+            if(dupeQ.length > 0 || newQ.length > 0){
+              // Always show import summary
               window._pendingImport = {d, newQ, dupeQ};
               document.getElementById('dupeImportInfo').innerHTML = `
                 <div style="margin-bottom:12px;">
@@ -2565,18 +2577,18 @@ function importQ(){
                     <span style="padding:4px 10px;background:rgba(16,185,129,.1);border:1px solid var(--green);border-radius:7px;font-size:0.78rem;font-weight:700;color:var(--green);">✅ ${newQ.length} New</span>
                     <span style="padding:4px 10px;background:rgba(245,158,11,.1);border:1px solid var(--gold);border-radius:7px;font-size:0.78rem;font-weight:700;color:var(--gold);">⚠️ ${dupeQ.length} Duplicate</span>
                   </div>
-                  <div style="font-size:0.82rem;color:var(--text);font-weight:600;margin-bottom:8px;">Duplicate questions:</div>
+                  ${dupeQ.length>0?`
+                  <div style="font-size:0.82rem;color:var(--text);font-weight:600;margin-bottom:8px;">Duplicate questions (already exist):</div>
                   <div style="max-height:160px;overflow-y:auto;">
-                    ${dupeQ.slice(0,10).map((q,i)=>`<div style="font-size:0.75rem;color:var(--muted);padding:4px 8px;background:var(--s2);border-radius:6px;margin-bottom:4px;">${i+1}. ${(q.qText||'').slice(0,60)}...</div>`).join('')}
-                    ${dupeQ.length>10?`<div style="font-size:0.72rem;color:var(--muted);text-align:center;">...and ${dupeQ.length-10} more</div>`:''}
-                  </div>
+                    ${dupeQ.slice(0,10).map((q,i)=>`<div style="font-size:0.75rem;color:var(--muted);padding:4px 8px;background:var(--s2);border-radius:6px;margin-bottom:4px;">${i+1}. ${(q.qText||'(image question)').slice(0,60)}${(q.qText||'').length>60?'...':''}</div>`).join('')}
+                    ${dupeQ.length>10?`<div style="font-size:0.72rem;color:var(--muted);text-align:center;margin-top:4px;">...aur ${dupeQ.length-10} more</div>`:''}
+                  </div>`:'<div style="font-size:0.82rem;color:var(--green);font-weight:600;">✅ No duplicates found!</div>'}
                 </div>`;
               openPopup('dupeImportPopup');
               return;
             }
-            // No duplicates — import all
-            questions=[...questions,...newQ];
-            save();
+            // Empty import
+            toast('No questions to import','error'); return;
           }
           if(d.testHistory&&d.testHistory.length){
             testHistory=[...d.testHistory,...testHistory];
