@@ -2029,7 +2029,7 @@ function renderPracticeSets(){
   const urgencyColor = totalDue>10?'#ef4444':totalDue>0?'#f59e0b':'#10b981';
   const urgencyBg = totalDue>10?'rgba(239,68,68,.08)':totalDue>0?'rgba(245,158,11,.06)':'rgba(16,185,129,.06)';
 
-  const srsCard = questions.length ? `
+  const srsCard = `
   <div style="margin-bottom:4px;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
       <div style="font-size:0.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;">🧠 Smart Review</div>
@@ -2055,7 +2055,7 @@ function renderPracticeSets(){
       ${totalDue>0?`<div style="margin-top:10px;background:rgba(0,0,0,.15);border-radius:4px;height:3px;"><div style="background:${urgencyColor};height:3px;border-radius:4px;width:${Math.min(100,totalDue*3)}%;"></div></div>`:''}
     </div>
     <div style="height:1px;background:var(--border);margin:12px 0 10px;"></div>
-  </div>` : '';
+  </div>`;
 
   const allCard = total ? `
     <div onclick="startPracticeSet('all')" style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;border:2px solid #4f7fff;background:rgba(79,127,255,.08);margin-bottom:8px;cursor:pointer;">
@@ -2481,6 +2481,25 @@ function importQ(){
           if(d.homeAnsKey) homeAnsKey={...homeAnsKey,...d.homeAnsKey};
           if(d.srsData){ srsData={...srsData,...d.srsData}; saveSrsData(); }
           if(d.pdfMeta&&d.pdfMeta.length){
+            // Merge pdfMeta — restore ansKey for existing PDFs
+            loadPdfMeta().then(async existing=>{
+              const merged = [...existing];
+              d.pdfMeta.forEach(imported=>{
+                const idx = merged.findIndex(p=>p.name===imported.name||p.fileName===imported.fileName);
+                if(idx>=0){
+                  // Restore ansKey if backup has more answers
+                  const existingKeys = Object.keys(merged[idx].ansKey||{}).length;
+                  const importedKeys = Object.keys(imported.ansKey||{}).length;
+                  if(importedKeys > existingKeys) merged[idx].ansKey = imported.ansKey;
+                  if(imported.markCorrect) merged[idx].markCorrect = imported.markCorrect;
+                  if(imported.markWrong !== undefined) merged[idx].markWrong = imported.markWrong;
+                } else {
+                  // New PDF meta (no actual PDF data, just metadata)
+                  merged.push({...imported, id: imported.id||Date.now()+Math.random()});
+                }
+              });
+              await savePdfMeta(merged);
+            }).catch(()=>{});
             toast(`✅ Imported! ${d.questions?.length||0} questions, ${d.pdfMeta.length} PDF records, ${d.testHistory?.length||0} history`,'success');
           } else {
             toast(`✅ Imported! ${d.questions?.length||0} questions, ${d.testHistory?.length||0} history`,'success');
@@ -4447,7 +4466,7 @@ function dismissBanner(){
 // Register Service Worker for offline support
 if('serviceWorker' in navigator){
   const swCode = `
-const CACHE='smartmock-v3';
+const CACHE='smartmock-v4';
 const ASSETS=[self.location.href||'/'];
 self.addEventListener('install',e=>{
   e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting()));
