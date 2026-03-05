@@ -876,6 +876,34 @@ input,textarea,select,button{font-family:inherit;}
 </div>
 
 <!-- POPUP: PDF POST-TEST SAVE -->
+<!-- Duplicate Import Popup -->
+<div class="popup-overlay" id="dupeImportPopup">
+  <div class="popup-sheet">
+    <div class="popup-handle"></div>
+    <div class="popup-header">
+      <span style="font-size:0.88rem;font-weight:800;">⚠️ Duplicate Questions Found</span>
+      <button onclick="closePopup('dupeImportPopup')" class="popup-close">✕</button>
+    </div>
+    <div style="padding:0 16px 24px;">
+      <div id="dupeImportInfo"></div>
+      <div style="display:grid;grid-template-columns:1fr;gap:8px;">
+        <button onclick="finishImport('skip')" style="padding:12px;border-radius:10px;border:none;background:rgba(16,185,129,.12);color:var(--green);font-weight:800;font-size:0.85rem;cursor:pointer;">
+          ✅ Skip duplicates — only add new ones
+        </button>
+        <button onclick="finishImport('keep')" style="padding:12px;border-radius:10px;border:none;background:rgba(245,158,11,.1);color:var(--gold);font-weight:800;font-size:0.85rem;cursor:pointer;">
+          ➕ Add all — duplicates bhi add karo
+        </button>
+        <button onclick="finishImport('replace')" style="padding:12px;border-radius:10px;border:none;background:rgba(239,68,68,.1);color:var(--red);font-weight:800;font-size:0.85rem;cursor:pointer;">
+          🔄 Replace — purane hatao, naye daalo
+        </button>
+        <button onclick="closePopup('dupeImportPopup')" style="padding:10px;border-radius:10px;border:1px solid var(--border);background:var(--s2);color:var(--muted);font-weight:700;font-size:0.82rem;cursor:pointer;">
+          ✕ Cancel import
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Notification Settings Popup -->
 <div class="popup-overlay" id="notifSettingsPopup">
   <div class="popup-sheet">
@@ -1597,6 +1625,55 @@ function renderExpThumbs(prefix,thumbElId){
 // srsData[id] = { interval:1, dueDate:'2026-03-05', ease:2.5, reps:0 }
 
 function srsToday(){ return new Date().toISOString().slice(0,10); }
+
+async function finishImport(action){
+  closePopup('dupeImportPopup');
+  const {d, newQ, dupeQ} = window._pendingImport || {};
+  if(!d) return;
+
+  if(action === 'skip'){
+    // Only add new questions
+    questions = [...questions, ...newQ];
+  } else if(action === 'keep'){
+    // Add all including duplicates
+    questions = [...questions, ...newQ, ...dupeQ];
+  } else if(action === 'replace'){
+    // Remove existing duplicates, add imported ones
+    const dupeTexts = dupeQ.map(q=>(q.qText||'').trim().toLowerCase().slice(0,60));
+    questions = questions.filter(q=>!dupeTexts.includes((q.qText||'').trim().toLowerCase().slice(0,60)));
+    questions = [...questions, ...newQ, ...dupeQ];
+  }
+  save();
+
+  // Continue rest of import (history, pdfMeta, srsData)
+  if(d.testHistory&&d.testHistory.length){
+    testHistory=[...d.testHistory,...testHistory].slice(0,50);
+    try{localStorage.setItem('smt_history',JSON.stringify(testHistory));}catch(e){}
+  }
+  if(d.homeAnsKey) homeAnsKey={...homeAnsKey,...d.homeAnsKey};
+  if(d.srsData){ srsData={...srsData,...d.srsData}; saveSrsData(); }
+  if(d.pdfMeta&&d.pdfMeta.length){
+    loadPdfMeta().then(async existing=>{
+      const merged = [...existing];
+      d.pdfMeta.forEach(imported=>{
+        const idx = merged.findIndex(p=>p.name===imported.name||p.fileName===imported.fileName);
+        if(idx>=0){
+          const existingKeys = Object.keys(merged[idx].ansKey||{}).length;
+          const importedKeys = Object.keys(imported.ansKey||{}).length;
+          if(importedKeys > existingKeys) merged[idx].ansKey = imported.ansKey;
+        } else {
+          merged.push({...imported});
+        }
+      });
+      await savePdfMeta(merged);
+    }).catch(()=>{});
+  }
+
+  const added = action==='skip'?newQ.length:action==='replace'?newQ.length+dupeQ.length:newQ.length+dupeQ.length;
+  toast(`✅ Imported! ${added} questions added${action==='replace'?' (duplicates replaced)':action==='skip'?' (duplicates skipped)':''}`, 'success');
+  renderProgressPage();
+  window._pendingImport = null;
+}
 
 function openSrsSettings(){
   document.getElementById('srsNewBankVal').textContent = srsSettings.newBankPerDay;
@@ -2470,7 +2547,35 @@ function importQ(){
         // Version 2 format
         if(d.version===2){
           if(d.questions&&d.questions.length){
-            questions=[...questions,...d.questions];
+            // Duplicate detection — match by qText similarity
+            const existing = questions.map(q=>(q.qText||'').trim().toLowerCase().slice(0,60));
+            const newQ = [], dupeQ = [];
+            d.questions.forEach(q=>{
+              const key = (q.qText||'').trim().toLowerCase().slice(0,60);
+              if(key && existing.includes(key)) dupeQ.push(q);
+              else newQ.push(q);
+            });
+
+            if(dupeQ.length > 0){
+              // Show duplicate popup
+              window._pendingImport = {d, newQ, dupeQ};
+              document.getElementById('dupeImportInfo').innerHTML = `
+                <div style="margin-bottom:12px;">
+                  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+                    <span style="padding:4px 10px;background:rgba(16,185,129,.1);border:1px solid var(--green);border-radius:7px;font-size:0.78rem;font-weight:700;color:var(--green);">✅ ${newQ.length} New</span>
+                    <span style="padding:4px 10px;background:rgba(245,158,11,.1);border:1px solid var(--gold);border-radius:7px;font-size:0.78rem;font-weight:700;color:var(--gold);">⚠️ ${dupeQ.length} Duplicate</span>
+                  </div>
+                  <div style="font-size:0.82rem;color:var(--text);font-weight:600;margin-bottom:8px;">Duplicate questions:</div>
+                  <div style="max-height:160px;overflow-y:auto;">
+                    ${dupeQ.slice(0,10).map((q,i)=>`<div style="font-size:0.75rem;color:var(--muted);padding:4px 8px;background:var(--s2);border-radius:6px;margin-bottom:4px;">${i+1}. ${(q.qText||'').slice(0,60)}...</div>`).join('')}
+                    ${dupeQ.length>10?`<div style="font-size:0.72rem;color:var(--muted);text-align:center;">...and ${dupeQ.length-10} more</div>`:''}
+                  </div>
+                </div>`;
+              openPopup('dupeImportPopup');
+              return;
+            }
+            // No duplicates — import all
+            questions=[...questions,...newQ];
             save();
           }
           if(d.testHistory&&d.testHistory.length){
