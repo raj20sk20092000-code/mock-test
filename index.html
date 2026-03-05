@@ -395,10 +395,6 @@ input,textarea,select,button{font-family:inherit;}
         <div class="add-type-btn img-btn" onclick="openImgPopup()"><span class="ico">🖼️</span><span>From Image</span></div>
         <div class="add-type-btn manual-btn" onclick="openManualPopup()"><span class="ico">✏️</span><span>Manual</span></div>
       </div>
-      <div style="display:flex;gap:8px;margin-top:12px;">
-        <button class="btn btn-ghost btn-sm" onclick="importQ()">📥 Import</button>
-        <button class="btn btn-ghost btn-sm" onclick="exportQ()">📤 Export</button>
-      </div>
     </div>
 
     <!-- PDF ADD CARD -->
@@ -484,6 +480,23 @@ input,textarea,select,button{font-family:inherit;}
         <span id="storageLabel" style="color:var(--muted);min-width:60px;text-align:right;">0 KB</span>
       </div>
     </div>
+
+    <!-- BACKUP SECTION -->
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <div class="card-head" style="margin-bottom:0;">💾 Backups</div>
+        <button onclick="saveBackupNow()" style="background:var(--acc);color:#fff;border:none;border-radius:8px;padding:6px 12px;font-size:0.78rem;font-weight:800;cursor:pointer;">+ Save Now</button>
+      </div>
+      <!-- Export / Import -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
+        <button onclick="exportQ()" style="padding:9px;background:var(--s2);border:1.5px solid var(--border);border-radius:9px;color:var(--text);font-size:0.8rem;font-weight:700;cursor:pointer;">📤 Export File</button>
+        <button onclick="importQ()" style="padding:9px;background:var(--s2);border:1.5px solid var(--border);border-radius:9px;color:var(--text);font-size:0.8rem;font-weight:700;cursor:pointer;">📥 Import File</button>
+      </div>
+      <!-- Backup list -->
+      <div style="font-size:0.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Saved Backups</div>
+      <div id="backupList"></div>
+    </div>
+
     <div class="card">
       <div class="card-head">📲 Save to Your Phone</div>
       <p style="font-size:0.78rem;color:var(--muted);margin-bottom:12px;">Download this file and open it in Chrome — works just like a native app!</p>
@@ -555,19 +568,37 @@ input,textarea,select,button{font-family:inherit;}
       <!-- Marking Scheme -->
       <div class="fg">
         <label>🎯 Marking Scheme</label>
-        <!-- PDF saved scheme preview -->
-        <div id="pdfSavedMarkInfo" style="font-size:0.75rem;color:var(--muted);background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;margin-bottom:8px;display:none;"></div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-          <div>
-            <label style="font-size:0.72rem;color:var(--muted);font-weight:600;">✅ Correct (+)</label>
-            <input type="number" id="pdfMarkCorrect" value="1" min="0.5" step="0.5" style="width:100%;margin-top:4px;padding:8px;background:var(--s2);border:1px solid var(--green);border-radius:8px;color:var(--green);font-size:0.9rem;font-weight:700;text-align:center;">
+        <!-- Auto-loaded from PDF — read only display -->
+        <div id="pdfMarkDisplay" style="display:none;background:var(--s2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:8px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+            <span id="pdfSavedMarkInfo" style="font-size:0.78rem;color:var(--muted);font-weight:600;"></span>
+            <button onclick="toggleMarkOverride()" style="font-size:0.68rem;color:var(--acc);background:none;border:none;cursor:pointer;font-weight:700;">✏️ Override</button>
           </div>
-          <div>
-            <label style="font-size:0.72rem;color:var(--muted);font-weight:600;">❌ Wrong (-)</label>
-            <input type="number" id="pdfMarkWrong" value="0" min="0" step="0.25" style="width:100%;margin-top:4px;padding:8px;background:var(--s2);border:1px solid var(--red);border-radius:8px;color:var(--red);font-size:0.9rem;font-weight:700;text-align:center;">
+          <div style="display:flex;gap:10px;">
+            <span style="font-size:0.82rem;font-weight:800;color:var(--green);">✅ +<span id="pdfMarkCorrectShow">1</span></span>
+            <span style="font-size:0.82rem;font-weight:800;color:var(--red);">❌ -<span id="pdfMarkWrongShow">0</span></span>
+            <span style="font-size:0.78rem;color:var(--muted);margin-left:auto;" id="pdfMaxMarksInfo"></span>
           </div>
         </div>
-        <div id="pdfMaxMarksInfo" style="font-size:0.7rem;color:var(--muted);text-align:center;margin-top:6px;"></div>
+        <!-- Hidden inputs (always used for actual values) -->
+        <input type="hidden" id="pdfMarkCorrect" value="1">
+        <input type="hidden" id="pdfMarkWrong" value="0">
+        <!-- Override inputs — hidden by default -->
+        <div id="pdfMarkOverride" style="display:none;margin-top:6px;">
+          <div style="font-size:0.7rem;color:var(--muted);margin-bottom:6px;">Override saved marking scheme:</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <div>
+              <label style="font-size:0.72rem;color:var(--muted);font-weight:600;">✅ Correct (+)</label>
+              <input type="number" id="pdfMarkCorrectOvr" value="1" min="0.5" step="0.5" oninput="syncMarkOverride()" style="width:100%;margin-top:4px;padding:8px;background:var(--s2);border:1px solid var(--green);border-radius:8px;color:var(--green);font-size:0.9rem;font-weight:700;text-align:center;">
+            </div>
+            <div>
+              <label style="font-size:0.72rem;color:var(--muted);font-weight:600;">❌ Wrong (-)</label>
+              <input type="number" id="pdfMarkWrongOvr" value="0" min="0" step="0.25" oninput="syncMarkOverride()" style="width:100%;margin-top:4px;padding:8px;background:var(--s2);border:1px solid var(--red);border-radius:8px;color:var(--red);font-size:0.9rem;font-weight:700;text-align:center;">
+            </div>
+          </div>
+        </div>
+        <!-- No PDF selected yet -->
+        <div id="pdfMarkNone" style="font-size:0.78rem;color:var(--muted);text-align:center;padding:8px;">Select a PDF above to load marking scheme</div>
       </div>
       <button class="btn btn-red" onclick="startPdfTest()">🚀 Start PDF Test</button>
     </div>
@@ -921,16 +952,16 @@ input,textarea,select,button{font-family:inherit;}
       <div id="dupeImportInfo"></div>
       <div style="display:grid;grid-template-columns:1fr;gap:8px;">
         <button onclick="finishImport('skip')" style="padding:12px;border-radius:10px;border:none;background:rgba(16,185,129,.12);color:var(--green);font-weight:800;font-size:0.85rem;cursor:pointer;">
-          ✅ Skip duplicates — only add new ones
+          ✅ Skip duplicates — only add new
         </button>
         <button onclick="finishImport('keep')" style="padding:12px;border-radius:10px;border:none;background:rgba(245,158,11,.1);color:var(--gold);font-weight:800;font-size:0.85rem;cursor:pointer;">
-          ➕ Add all — duplicates bhi add karo
+          ➕ Add all — add duplicates too
         </button>
         <button onclick="finishImport('replace')" style="padding:12px;border-radius:10px;border:none;background:rgba(239,68,68,.1);color:var(--red);font-weight:800;font-size:0.85rem;cursor:pointer;">
-          🔄 Replace — purane hatao, naye daalo
+          🔄 Replace — remove old, add new
         </button>
         <button onclick="closePopup('dupeImportPopup')" style="padding:10px;border-radius:10px;border:1px solid var(--border);background:var(--s2);color:var(--muted);font-weight:700;font-size:0.82rem;cursor:pointer;">
-          ✕ Cancel import
+          ✕ Cancel
         </button>
       </div>
     </div>
@@ -956,7 +987,7 @@ input,textarea,select,button{font-family:inherit;}
         <span style="font-size:1.2rem;">🔔</span>
         <div style="flex:1;">
           <div style="font-size:0.85rem;font-weight:700;color:var(--text);">Daily Reminder</div>
-          <div style="font-size:0.72rem;color:var(--muted);">Review karne ka reminder</div>
+          <div style="font-size:0.72rem;color:var(--muted);">Reminder to review cards</div>
         </div>
         <label style="position:relative;display:inline-block;width:44px;height:24px;">
           <input type="checkbox" id="notifToggle" style="opacity:0;width:0;height:0;" onchange="">
@@ -968,13 +999,13 @@ input,textarea,select,button{font-family:inherit;}
         <span style="font-size:1.2rem;">⏰</span>
         <div style="flex:1;">
           <div style="font-size:0.85rem;font-weight:700;color:var(--text);">Reminder Time</div>
-          <div style="font-size:0.72rem;color:var(--muted);">Kab notification chahiye</div>
+          <div style="font-size:0.72rem;color:var(--muted);">When to send reminder</div>
         </div>
         <input type="time" id="notifTime" value="08:00" style="background:var(--s3);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:6px 10px;font-size:0.85rem;font-weight:700;">
       </div>
       <!-- Info box -->
       <div style="background:rgba(79,127,255,.08);border:1px solid rgba(79,127,255,.3);border-radius:10px;padding:10px 14px;margin-bottom:16px;font-size:0.75rem;color:var(--muted);">
-        💡 App open hone par notification check hoti hai. Phone mein browser notifications allow karo settings se.
+        💡 Checked when app opens. Allow browser notifications from phone settings.
       </div>
       <!-- Test button -->
       <button onclick="testNotification()" style="width:100%;padding:10px;background:var(--s2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:0.85rem;font-weight:700;cursor:pointer;margin-bottom:10px;">🔔 Test Notification</button>
@@ -992,7 +1023,7 @@ input,textarea,select,button{font-family:inherit;}
       <button onclick="closePopup('srsSettingsPopup')" class="popup-close">✕</button>
     </div>
     <div style="padding:0 16px 24px;">
-      <div style="font-size:0.72rem;color:var(--muted);margin-bottom:16px;">Daily new cards limit — due cards are always shown</div>
+      <div style="font-size:0.72rem;color:var(--muted);margin-bottom:16px;">Daily new cards limit — due cards always shown</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;">
         <div style="background:var(--s2);border-radius:12px;padding:14px;">
           <div style="font-size:0.72rem;font-weight:700;color:var(--muted);margin-bottom:8px;">📚 Bank Questions</div>
@@ -1014,7 +1045,7 @@ input,textarea,select,button{font-family:inherit;}
         </div>
       </div>
       <div style="background:var(--s2);border-radius:10px;padding:12px;font-size:0.75rem;color:var(--muted);margin-bottom:16px;">
-        💡 <b>Tip:</b> Beginners ke liye 10+5, Advanced ke liye 20+10 recommended hai. Zyada cards = zyada pressure!
+        💡 <b>Tip:</b> Beginners: 10+5, Advanced: 20+10 recommended. More cards = more pressure!
       </div>
       <button onclick="saveSrsSettingsAndClose()" style="width:100%;padding:12px;background:linear-gradient(135deg,#7c3aed,#4f7fff);color:#fff;border:none;border-radius:10px;font-size:0.9rem;font-weight:800;cursor:pointer;">✅ Save Settings</button>
     </div>
@@ -1293,6 +1324,7 @@ function checkAutoBackup(){
 
     if(countDiff >= BACKUP_INTERVAL_QUESTIONS || timeDiff >= BACKUP_INTERVAL_MS){
       doAutoBackup();
+      saveBackupNow(true); // also save in-app silently
     }
   }catch(e){}
 }
@@ -1301,25 +1333,35 @@ async function doAutoBackup(){
   if(!questions.length) return;
   try{
     const date = new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'2-digit'}).replace(/ /g,'-');
-    
-    // Gather PDF meta (without raw PDF data to keep size small)
+
     let pdfMeta = [];
     try{ pdfMeta = await loadPdfMeta(); }catch(e){}
+
+    // Include PDF binary data
+    const pdfFiles = {};
+    for(const p of pdfMeta){
+      try{ const data = await getPdfData(p.id); if(data) pdfFiles[p.id]=data; }catch(e){}
+    }
 
     const data = JSON.stringify({
       version: 2,
       date: new Date().toISOString(),
       questions,
       pdfMeta,
+      pdfFiles,
       testHistory: testHistory || [],
       homeAnsKey: homeAnsKey || {},
       srsData: srsData || {}
-    }, null, 2);
+    });
 
+    // Use Blob — handles image base64 data without size crash
+    const blob = new Blob([data], {type: 'application/json'});
+    const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = 'data:application/json,' + encodeURIComponent(data);
+    a.href = url;
     a.download = `SmartMock_Backup_${date}.json`;
     a.click();
+    setTimeout(()=>URL.revokeObjectURL(url), 3000);
     localStorage.setItem('smt_backup_count', questions.length);
     localStorage.setItem('smt_backup_time', Date.now());
     toast('💾 Auto backup saved!', 'success');
@@ -1385,7 +1427,7 @@ function goPage(p){
   document.querySelectorAll('.page').forEach(e=>e.classList.remove('active'));
   document.querySelectorAll('.bnav-item').forEach(e=>e.classList.remove('active'));
   document.getElementById('page-'+p).classList.add('active');
-  document.getElementById('bnav-'+p).classList.add('active');
+  document.getElementById('bnav-'+p)?.classList.add('active');
   document.getElementById('examView').style.display='none';
   document.getElementById('resultView').style.display='none';
   document.getElementById('scrollBody').style.display='block';
@@ -1685,6 +1727,155 @@ async function finishImport(action){
   window._pendingImport = null;
 }
 
+/* ===== IN-APP BACKUP SYSTEM ===== */
+const MAX_INAPP_BACKUPS = 5;
+
+async function saveBackupNow(auto=false){
+  try{
+    let pdfMeta = [];
+    try{ pdfMeta = await loadPdfMeta(); }catch(e){}
+    const pdfFiles = {};
+    for(const p of pdfMeta){
+      try{ const d = await getPdfData(p.id); if(d) pdfFiles[p.id]=d; }catch(e){}
+    }
+    const backup = {
+      version: 2,
+      date: new Date().toISOString(),
+      label: auto ? 'Auto' : 'Manual',
+      questions,
+      pdfMeta,
+      pdfFiles,
+      testHistory: testHistory||[],
+      homeAnsKey: homeAnsKey||{},
+      srsData: srsData||{}
+    };
+    // Load existing backups
+    let backups = [];
+    try{ backups = await dbMiscGet('inapp_backups') || []; }catch(e){}
+    // Add new backup at start
+    backups.unshift({...backup, id: Date.now()});
+    // Keep only last 5
+    if(backups.length > MAX_INAPP_BACKUPS) backups = backups.slice(0, MAX_INAPP_BACKUPS);
+    await dbMiscSet('inapp_backups', backups);
+    if(!auto) toast('✅ Backup saved!','success');
+    renderBackupList();
+  }catch(e){ if(!auto) toast('Backup failed: '+e.message,'error'); }
+}
+
+function showBackupPage(){ goPage('add'); }
+function hideBackupPage(){ goPage('add'); }
+
+async function renderBackupList(){
+  const listEl = document.getElementById('backupList');
+  const infoEl = document.getElementById('backupStorageInfo');
+  if(!listEl) return;
+
+  let backups = [];
+  try{ backups = await dbMiscGet('inapp_backups') || []; }catch(e){}
+
+  // Storage info
+  if(infoEl){
+    const qCount = questions.length;
+    const pdfList = await loadPdfMeta().catch(()=>[]);
+    infoEl.innerHTML = `📦 ${qCount} questions · ${pdfList.length} PDFs · ${backups.length}/${MAX_INAPP_BACKUPS} backups saved`;
+  }
+
+  if(!backups.length){
+    listEl.innerHTML = `<div style="text-align:center;padding:30px;color:var(--muted);">
+      <div style="font-size:2.5rem;margin-bottom:8px;">💾</div>
+      <div style="font-size:0.88rem;font-weight:600;">No backups yet</div>
+      <div style="font-size:0.75rem;margin-top:4px;">Tap "+ Save Now" to create one</div>
+    </div>`;
+    return;
+  }
+
+  listEl.innerHTML = backups.map((b,i)=>{
+    const d = new Date(b.date);
+    const dateStr = d.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+    const timeStr = d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+    const qCount = b.questions?.length||0;
+    const pdfCount = b.pdfMeta?.length||0;
+    const pdfFiles = Object.keys(b.pdfFiles||{}).length;
+    return `<div style="background:var(--s2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:8px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+        <div style="width:40px;height:40px;border-radius:10px;background:${b.label==='Auto'?'rgba(245,158,11,.15)':'rgba(79,127,255,.15)'};display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0;">${b.label==='Auto'?'🔄':'💾'}</div>
+        <div style="flex:1;">
+          <div style="font-size:0.85rem;font-weight:800;color:var(--text);">${b.label} Backup</div>
+          <div style="font-size:0.72rem;color:var(--muted);">${dateStr} · ${timeStr}</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px;">
+        <span style="font-size:0.7rem;padding:2px 8px;background:rgba(79,127,255,.1);border:1px solid #4f7fff44;border-radius:6px;color:#4f7fff;">📝 ${qCount} questions</span>
+        <span style="font-size:0.7rem;padding:2px 8px;background:rgba(16,185,129,.1);border:1px solid var(--green);border-radius:6px;color:var(--green);">📄 ${pdfCount} PDFs${pdfFiles>0?' ('+pdfFiles+' files)':''}</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;">
+        <button onclick="restoreBackup(${i})" style="padding:8px;background:linear-gradient(135deg,#7c3aed,#4f7fff);color:#fff;border:none;border-radius:8px;font-size:0.78rem;font-weight:800;cursor:pointer;">♻️ Restore</button>
+        <button onclick="exportBackup(${i})" style="padding:8px;background:var(--s3);border:1px solid var(--border);color:var(--text);border-radius:8px;font-size:0.78rem;font-weight:700;cursor:pointer;">📤 Export</button>
+        <button onclick="deleteBackup(${i})" style="padding:8px;background:rgba(239,68,68,.1);border:1px solid var(--red);color:var(--red);border-radius:8px;font-size:0.78rem;font-weight:700;cursor:pointer;">🗑️ Delete</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function restoreBackup(idx){
+  if(!confirm('Restore this backup? Current data will be merged.')) return;
+  let backups = [];
+  try{ backups = await dbMiscGet('inapp_backups')||[]; }catch(e){}
+  const b = backups[idx];
+  if(!b) return;
+
+  // Restore questions
+  if(b.questions?.length){
+    questions = [...questions, ...b.questions.filter(q=>!questions.find(e=>e.id===q.id))];
+    save();
+  }
+  // Restore PDFs
+  if(b.pdfMeta?.length){
+    const existing = await loadPdfMeta().catch(()=>[]);
+    const merged = [...existing];
+    for(const p of b.pdfMeta){
+      const idx2 = merged.findIndex(e=>e.id===p.id||e.name===p.name);
+      if(idx2<0){
+        merged.push(p);
+        if(b.pdfFiles?.[p.id]) await savePdfData(p.id, b.pdfFiles[p.id]);
+      }
+    }
+    await savePdfMeta(merged);
+  }
+  // Restore history, ansKey, srsData
+  if(b.testHistory?.length) testHistory=[...b.testHistory,...testHistory].slice(0,50);
+  if(b.homeAnsKey) homeAnsKey={...homeAnsKey,...b.homeAnsKey};
+  if(b.srsData){ srsData={...srsData,...b.srsData}; await saveSrsData(); }
+  try{localStorage.setItem('smt_history',JSON.stringify(testHistory));}catch(e){}
+
+  toast('✅ Backup restored!','success');
+  renderBackupList();
+}
+
+async function exportBackup(idx){
+  let backups = [];
+  try{ backups = await dbMiscGet('inapp_backups')||[]; }catch(e){}
+  const b = backups[idx];
+  if(!b) return;
+  const date = new Date(b.date).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'2-digit'}).replace(/ /g,'-');
+  const blob = new Blob([JSON.stringify(b)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href=url; a.download=`SmartMock_${b.label}_${date}.json`; a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),3000);
+  toast('📤 Exported!','success');
+}
+
+async function deleteBackup(idx){
+  if(!confirm('Delete this backup?')) return;
+  let backups = [];
+  try{ backups = await dbMiscGet('inapp_backups')||[]; }catch(e){}
+  backups.splice(idx,1);
+  await dbMiscSet('inapp_backups', backups);
+  toast('🗑️ Deleted','success');
+  renderBackupList();
+}
+
 function openSrsSettings(){
   document.getElementById('srsNewBankVal').textContent = srsSettings.newBankPerDay;
   document.getElementById('srsNewPdfVal').textContent = srsSettings.newPdfPerDay;
@@ -1711,6 +1902,40 @@ async function saveSrsSettingsAndClose(){
 function openSrsView(){
   const el = document.getElementById('srsView');
   if(el){ el.style.display='flex'; }
+  // Add swipe support
+  const body = document.getElementById('srsScrollBody');
+  if(body && !body._srsSwipe){
+    body._srsSwipe = true;
+    let tx=0, ty=0, swiping=false;
+    body.addEventListener('touchstart', e=>{
+      tx = e.touches[0].clientX;
+      ty = e.touches[0].clientY;
+      swiping = true;
+    }, {passive:true});
+    body.addEventListener('touchend', e=>{
+      if(!swiping) return;
+      const dx = e.changedTouches[0].clientX - tx;
+      const dy = e.changedTouches[0].clientY - ty;
+      swiping = false;
+      // Only swipe if horizontal > vertical and answer already shown
+      if(Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 60){
+        const revealed = document.getElementById('srsAnswerReveal');
+        if(revealed && revealed.style.display !== 'none'){
+          if(dx < 0) srsRate(2);      // swipe left = Good
+          else srsSkipBack();          // swipe right = go back (if possible)
+        }
+      }
+    }, {passive:true});
+  }
+}
+
+function srsSkipBack(){
+  if(srsSession.current > 0){
+    srsSession.current--;
+    // Remove last result
+    srsSession.results.pop();
+    renderSrsCard();
+  }
 }
 
 function closeSrsView(){
@@ -1897,7 +2122,7 @@ async function startSmartReview(){
   const pdfNew = (await getPdfSrsNewCards()).slice(0, srsSettings.newPdfPerDay);
   const queue = [...due, ...bankNew, ...pdfNew];
 
-  if(!queue.length){ toast('No questions due — come back tomorrow! 🎉','success'); return; }
+  if(!queue.length){ toast('No questions due — all caught up! 🎉','success'); return; }
 
   // Shuffle
   for(let i=queue.length-1;i>0;i--){
@@ -1941,7 +2166,7 @@ function renderSrsCard(){
   document.getElementById('srsInterval').textContent = isNew ? '✨ New' : `⏰ ${intervalLabel}`;
   document.getElementById('srsInterval').style.color = isNew ? '#4f7fff' : 'var(--gold)';
 
-  // Scroll to top
+  // Scroll to top instantly
   const scrollBody = document.getElementById('srsScrollBody');
   if(scrollBody) scrollBody.scrollTop = 0;
 
@@ -1950,13 +2175,14 @@ function renderSrsCard(){
     <div id="srsAnswerReveal" style="display:none;margin-top:12px;">
       <div style="height:1px;background:var(--border);margin-bottom:10px;"></div>
       <div id="srsExplanationBox"></div>
-      <div style="font-size:0.7rem;font-weight:700;color:var(--muted);margin-bottom:6px;">Kitna yaad tha?</div>
+      <div style="font-size:0.7rem;font-weight:700;color:var(--muted);margin-bottom:6px;">How well did you recall?</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
-        <button onclick="srsRate(0)" style="padding:10px 4px;border-radius:10px;border:none;background:rgba(239,68,68,.15);color:var(--red);font-weight:800;font-size:0.8rem;cursor:pointer;line-height:1.4;">❌ Again<br><span style="font-size:0.65rem;font-weight:600;opacity:.8;">Nahi aaya</span></button>
-        <button onclick="srsRate(1)" style="padding:10px 4px;border-radius:10px;border:none;background:rgba(245,158,11,.1);color:var(--gold);font-weight:800;font-size:0.8rem;cursor:pointer;line-height:1.4;">😅 Hard<br><span style="font-size:0.65rem;font-weight:600;opacity:.8;">Struggle hua</span></button>
+        <button onclick="srsRate(0)" style="padding:10px 4px;border-radius:10px;border:none;background:rgba(239,68,68,.15);color:var(--red);font-weight:800;font-size:0.8rem;cursor:pointer;line-height:1.4;">❌ Again<br><span style="font-size:0.65rem;font-weight:600;opacity:.8;">Blank</span></button>
+        <button onclick="srsRate(1)" style="padding:10px 4px;border-radius:10px;border:none;background:rgba(245,158,11,.1);color:var(--gold);font-weight:800;font-size:0.8rem;cursor:pointer;line-height:1.4;">😅 Hard<br><span style="font-size:0.65rem;font-weight:600;opacity:.8;">With effort</span></button>
         <button onclick="srsRate(2)" style="padding:10px 4px;border-radius:10px;border:none;background:rgba(16,185,129,.12);color:var(--green);font-weight:800;font-size:0.8rem;cursor:pointer;line-height:1.4;">✅ Good<br><span style="font-size:0.65rem;font-weight:600;opacity:.8;" id="srsGoodDays">+?d</span></button>
         <button onclick="srsRate(3)" style="padding:10px 4px;border-radius:10px;border:none;background:rgba(79,127,255,.12);color:#4f7fff;font-weight:800;font-size:0.8rem;cursor:pointer;line-height:1.4;">⚡ Easy<br><span style="font-size:0.65rem;font-weight:600;opacity:.8;" id="srsEasyDays">+?d</span></button>
       </div>
+      <div style="text-align:center;margin-top:8px;font-size:0.65rem;color:var(--muted);opacity:.6;">← swipe left = Good &nbsp;|&nbsp; swipe right = Back</div>
     </div>`;
 
   if(q.isPdf){
@@ -2049,8 +2275,8 @@ function renderSrsOptions(q){
   if(!el) return;
   srsSelectedAns = '';
   el.innerHTML = ['A','B','C','D'].map(k=>`
-    <button onclick="srsTapOption('${k}')" id="srsOpt_${k}" style="padding:8px 6px;border-radius:9px;border:2px solid var(--border);background:var(--s2);color:var(--text);font-size:0.8rem;font-weight:600;cursor:pointer;text-align:left;transition:all .15s;line-height:1.3;">
-      <span style="font-weight:800;color:var(--acc);">${k}.</span> ${q.options?.[k]||k}
+    <button onclick="srsTapOption('${k}')" id="srsOpt_${k}" style="padding:14px 10px;border-radius:12px;border:2px solid var(--border);background:var(--s2);color:var(--text);font-size:0.88rem;font-weight:600;cursor:pointer;text-align:left;transition:all .15s;line-height:1.4;min-height:56px;">
+      <span style="font-weight:900;color:var(--acc);font-size:1rem;">${k}.</span> ${q.options?.[k]||k}
     </button>`).join('');
 }
 
@@ -2084,11 +2310,11 @@ function srsTapOption(opt){
     // Show explanation in the box
     const expBox = document.getElementById('srsExplanationBox');
     if(expBox) expBox.innerHTML = q.explanation ? `<div style="font-size:0.78rem;color:var(--muted);padding:8px 10px;background:var(--s2);border-radius:8px;margin-bottom:8px;line-height:1.5;">💡 ${q.explanation}</div>` : '';
-    // Scroll to reveal rating buttons
-    setTimeout(()=>{
+    // Instant scroll to rating buttons
+    requestAnimationFrame(()=>{
       const scrollBody = document.getElementById('srsScrollBody');
-      if(scrollBody) scrollBody.scrollTo({top: scrollBody.scrollHeight, behavior:'smooth'});
-    }, 100);
+      if(scrollBody) scrollBody.scrollTop = scrollBody.scrollHeight;
+    });
   }
 }
 
@@ -2430,11 +2656,14 @@ function delQ(id){
 function clearAll(){if(!questions.length)return;if(!confirm(`${questions.length} questions delete?`))return;questions=[];save();renderBank();}
 function updateAddPageStats(){
   const s=document.getElementById('addPageStats'),r=document.getElementById('addStatRow');
-  if(!questions.length){s.style.display='none';return;}
-  s.style.display='block';
-  const subs=[...new Set(questions.map(q=>q.subject).filter(Boolean))];
-  r.innerHTML=`<div class="stat-box"><div class="stat-val">${questions.length}</div><div class="stat-lbl">Questions</div></div><div class="stat-box"><div class="stat-val">${subs.length}</div><div class="stat-lbl">Subjects</div></div>`;
-  updateStorageBar((localStorage.getItem('smt_v3')||'').length);
+  if(!questions.length){s.style.display='none';}
+  else {
+    s.style.display='block';
+    const subs=[...new Set(questions.map(q=>q.subject).filter(Boolean))];
+    r.innerHTML=`<div class="stat-box"><div class="stat-val">${questions.length}</div><div class="stat-lbl">Questions</div></div><div class="stat-box"><div class="stat-val">${subs.length}</div><div class="stat-lbl">Subjects</div></div>`;
+    updateStorageBar((localStorage.getItem('smt_v3')||'').length);
+  }
+  renderBackupList(); // always refresh backup list
 }
 function updateSetupStats(){
   const subs=[...new Set(questions.map(q=>q.subject).filter(Boolean))];
@@ -2571,21 +2800,41 @@ async function exportQ(){
   const date = new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'2-digit'}).replace(/ /g,'-');
   let pdfMeta = [];
   try{ pdfMeta = await loadPdfMeta(); }catch(e){}
+
+  // Load actual PDF binary data for each PDF
+  const pdfFiles = {};
+  for(const p of pdfMeta){
+    try{
+      const data = await getPdfData(p.id);
+      if(data) pdfFiles[p.id] = data;
+    }catch(e){}
+  }
+
+  const imgQs = questions.filter(q=>q.image).length;
+  const textQs = questions.filter(q=>!q.image).length;
+
   const data = JSON.stringify({
     version: 2,
     date: new Date().toISOString(),
     questions,
     pdfMeta,
+    pdfFiles,  // actual PDF data included!
     testHistory: testHistory || [],
-    homeAnsKey: homeAnsKey || {}
-  }, null, 2);
+    homeAnsKey: homeAnsKey || {},
+    srsData: srsData || {}
+  });
+
+  const blob = new Blob([data], {type: 'application/json'});
+  const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = 'data:application/json,' + encodeURIComponent(data);
+  a.href = url;
   a.download = `SmartMock_Backup_${date}.json`;
   a.click();
+  setTimeout(()=>URL.revokeObjectURL(url), 3000);
+
   localStorage.setItem('smt_backup_count', questions.length);
   localStorage.setItem('smt_backup_time', Date.now());
-  toast('✅ Exported!','success');
+  toast(`✅ Exported! ${textQs} text + ${imgQs} image Q + ${pdfMeta.length} PDFs`, 'success');
 }
 function importQ(){
   const inp=document.createElement('input');inp.type='file';inp.accept='.json';
@@ -2631,7 +2880,7 @@ function importQ(){
                   <div style="font-size:0.82rem;color:var(--text);font-weight:600;margin-bottom:8px;">Duplicate questions (already exist):</div>
                   <div style="max-height:160px;overflow-y:auto;">
                     ${dupeQ.slice(0,10).map((q,i)=>`<div style="font-size:0.75rem;color:var(--muted);padding:4px 8px;background:var(--s2);border-radius:6px;margin-bottom:4px;">${i+1}. ${(q.qText||'(image question)').slice(0,60)}${(q.qText||'').length>60?'...':''}</div>`).join('')}
-                    ${dupeQ.length>10?`<div style="font-size:0.72rem;color:var(--muted);text-align:center;margin-top:4px;">...aur ${dupeQ.length-10} more</div>`:''}
+                    ${dupeQ.length>10?`<div style="font-size:0.72rem;color:var(--muted);text-align:center;margin-top:4px;">...and ${dupeQ.length-10} more</div>`:''}
                   </div>`:'<div style="font-size:0.82rem;color:var(--green);font-weight:600;">✅ No duplicates found!</div>'}
                 </div>`;
               openPopup('dupeImportPopup');
@@ -2651,7 +2900,7 @@ function importQ(){
             // Merge pdfMeta — restore ansKey for existing PDFs
             loadPdfMeta().then(async existing=>{
               const merged = [...existing];
-              d.pdfMeta.forEach(imported=>{
+              for(const imported of d.pdfMeta){
                 const idx = merged.findIndex(p=>p.name===imported.name||p.fileName===imported.fileName);
                 if(idx>=0){
                   // Restore ansKey if backup has more answers
@@ -2660,14 +2909,24 @@ function importQ(){
                   if(importedKeys > existingKeys) merged[idx].ansKey = imported.ansKey;
                   if(imported.markCorrect) merged[idx].markCorrect = imported.markCorrect;
                   if(imported.markWrong !== undefined) merged[idx].markWrong = imported.markWrong;
+                  // Restore PDF binary if not already stored
+                  if(d.pdfFiles && d.pdfFiles[imported.id]){
+                    const existing = await getPdfData(merged[idx].id).catch(()=>null);
+                    if(!existing) await savePdfData(merged[idx].id, d.pdfFiles[imported.id]);
+                  }
                 } else {
-                  // New PDF meta (no actual PDF data, just metadata)
-                  merged.push({...imported, id: imported.id||Date.now()+Math.random()});
+                  // New PDF — add meta and save binary
+                  const newId = imported.id || Date.now()+Math.random();
+                  merged.push({...imported, id: newId});
+                  if(d.pdfFiles && d.pdfFiles[imported.id]){
+                    await savePdfData(newId, d.pdfFiles[imported.id]);
+                  }
                 }
-              });
+              }
               await savePdfMeta(merged);
+              const pdfRestored = d.pdfFiles ? Object.keys(d.pdfFiles).length : 0;
+              toast(`✅ Imported! ${d.questions?.length||0} questions, ${d.pdfMeta.length} PDFs${pdfRestored>0?' ('+pdfRestored+' files restored)':''}`, 'success');
             }).catch(()=>{});
-            toast(`✅ Imported! ${d.questions?.length||0} questions, ${d.pdfMeta.length} PDF records, ${d.testHistory?.length||0} history`,'success');
           } else {
             toast(`✅ Imported! ${d.questions?.length||0} questions, ${d.testHistory?.length||0} history`,'success');
           }
@@ -2774,27 +3033,50 @@ async function selectTestPdf(id){
       testPdfData = data;
       homeAnsKey = item.ansKey || {};
 
-      // Auto-fill marking scheme from saved PDF settings
       const mc = item.markCorrect ?? 1;
       const mw = item.markWrong ?? 0;
       const qCount = item.qCount || Object.keys(item.ansKey||{}).length || 10;
 
-      const mcEl = document.getElementById('pdfMarkCorrect');
-      const mwEl = document.getElementById('pdfMarkWrong');
-      if(mcEl) mcEl.value = mc;
-      if(mwEl) mwEl.value = mw;
+      // Set hidden inputs
+      document.getElementById('pdfMarkCorrect').value = mc;
+      document.getElementById('pdfMarkWrong').value = mw;
 
-      // Show saved scheme info
-      const infoEl = document.getElementById('pdfSavedMarkInfo');
-      const maxEl = document.getElementById('pdfMaxMarksInfo');
-      if(infoEl){
-        infoEl.style.display = 'block';
-        infoEl.innerHTML = `📄 <b>${item.name}</b> — Saved: +${mc} correct, ${mw>0?'-'+mw+' wrong':'no negative'}`;
-      }
-      if(maxEl) maxEl.textContent = `Max Marks = ${qCount} × ${mc} = ${(qCount*mc).toFixed(1)}`;
+      // Set override inputs to same values
+      const ovrC = document.getElementById('pdfMarkCorrectOvr');
+      const ovrW = document.getElementById('pdfMarkWrongOvr');
+      if(ovrC) ovrC.value = mc;
+      if(ovrW) ovrW.value = mw;
+
+      // Show display card
+      document.getElementById('pdfMarkDisplay').style.display = 'block';
+      document.getElementById('pdfMarkNone').style.display = 'none';
+      document.getElementById('pdfMarkOverride').style.display = 'none';
+
+      // Update display values
+      document.getElementById('pdfMarkCorrectShow').textContent = mc;
+      document.getElementById('pdfMarkWrongShow').textContent = mw;
+      document.getElementById('pdfSavedMarkInfo').textContent = `📄 ${item.name}`;
+      document.getElementById('pdfMaxMarksInfo').textContent = `Max: ${(qCount*mc).toFixed(1)} marks`;
     }
   } catch(e){}
   updatePdfTestStatus();
+}
+
+function toggleMarkOverride(){
+  const el = document.getElementById('pdfMarkOverride');
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+function syncMarkOverride(){
+  const mc = parseFloat(document.getElementById('pdfMarkCorrectOvr')?.value||1);
+  const mw = parseFloat(document.getElementById('pdfMarkWrongOvr')?.value||0);
+  document.getElementById('pdfMarkCorrect').value = mc;
+  document.getElementById('pdfMarkWrong').value = mw;
+  document.getElementById('pdfMarkCorrectShow').textContent = mc;
+  document.getElementById('pdfMarkWrongShow').textContent = mw;
+  // Update max marks
+  const qCount = parseInt(document.getElementById('tPdfNum')?.value||10);
+  document.getElementById('pdfMaxMarksInfo').textContent = `Max: ${(qCount*mc).toFixed(1)} marks`;
 }
 
 function togglePdfMenu(id){
@@ -3150,6 +3432,10 @@ function submitExam(ask){
     title:document.getElementById('tTitle').value||'Mock Test',
     date:new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}),
     pct,c,w,s,total,
+    rawScore: parseFloat(rawScore.toFixed(2)),
+    maxScore: parseFloat(maxScore.toFixed(0)),
+    markCorrect: markCorrectVal,
+    negMark: negMarkEnabled ? negMarkAmt : 0,
     subject:selectedSubjects.length?selectedSubjects.join(', '):'All',
     qTimers:{...qTimers},
     isPdf: isPdfOnlyTest,
@@ -3178,16 +3464,14 @@ function submitExam(ask){
   document.getElementById('rGrade').textContent=g;document.getElementById('rMsg').textContent=m;
   document.getElementById('rsC').textContent=c;document.getElementById('rsW').textContent=w;
   document.getElementById('rsS').textContent=s;document.getElementById('rsT').textContent=total;
-  // Show negative marking info
+  // Always show marks info
   const negInfoEl = document.getElementById('negMarkInfo');
   if(negMarkEnabled && w > 0){
     const deducted = (w * negMarkAmt).toFixed(2);
     const gross = (c * markCorrectVal).toFixed(2);
-    if(negInfoEl) negInfoEl.innerHTML = `<div style="text-align:center;margin:6px 0;padding:8px 12px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:8px;font-size:0.78rem;color:var(--red);font-weight:700;">⚠️ +${gross} − ${deducted} = <span style="font-size:0.95rem;">${rawScore.toFixed(2)}</span> / ${maxScore.toFixed(0)} marks</div>`;
-  } else if(markCorrectVal !== 1){
-    if(negInfoEl) negInfoEl.innerHTML = `<div style="text-align:center;margin:6px 0;padding:8px 12px;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.3);border-radius:8px;font-size:0.78rem;color:var(--green);font-weight:700;">✅ Score: ${rawScore.toFixed(1)} / ${maxScore.toFixed(0)} marks (+${markCorrectVal} per correct)</div>`;
+    if(negInfoEl) negInfoEl.innerHTML = `<div style="text-align:center;margin:6px 0;padding:8px 12px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:8px;font-size:0.82rem;color:var(--red);font-weight:700;">⚠️ +${gross} − ${deducted} = <span style="font-size:1rem;">${rawScore.toFixed(2)}</span> / ${maxScore.toFixed(0)} marks</div>`;
   } else {
-    if(negInfoEl) negInfoEl.innerHTML = '';
+    if(negInfoEl) negInfoEl.innerHTML = `<div style="text-align:center;margin:6px 0;padding:8px 12px;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.3);border-radius:8px;font-size:0.82rem;color:var(--green);font-weight:700;">✅ ${rawScore.toFixed(1)} / ${maxScore.toFixed(0)} marks${markCorrectVal!==1?` (+${markCorrectVal} per correct)`:''}</div>`;
   }
   document.getElementById('reviewArea').style.display='none';
   document.getElementById('scrollBody').scrollTop=0;
@@ -3769,6 +4053,7 @@ function renderHistoryList(){
   if(!testHistory.length){el.innerHTML='<div style="color:var(--muted);font-size:0.78rem;text-align:center;padding:12px 0;">No tests yet.</div>';return;}
   el.innerHTML=testHistory.slice(0,20).map((h,idx)=>{
     const col=h.pct>=75?'#10b981':h.pct>=50?'#f59e0b':'#ef4444';
+    const marksStr = h.rawScore!=null ? `<span class="hist-stat" style="background:rgba(79,127,255,.12);color:#4f7fff;">📊 ${h.rawScore}/${h.maxScore}</span>` : '';
     return`<div class="hist-item" style="position:relative;">
       <div class="hist-score" style="background:${col}">${h.pct}%</div>
       <div class="hist-body">
@@ -3778,6 +4063,7 @@ function renderHistoryList(){
           <span class="hist-stat c">✅ ${h.c}</span>
           <span class="hist-stat w">❌ ${h.w}</span>
           <span class="hist-stat s">⬜ ${h.s}</span>
+          ${marksStr}
         </div>
       </div>
       <button onclick="toggleHistMenu(${idx},event)" style="background:none;border:none;color:var(--muted);font-size:1.3rem;cursor:pointer;padding:4px 8px;flex-shrink:0;">⋮</button>
@@ -4062,10 +4348,10 @@ function previewQuickAns(val){
 
 function applyQuickAns(){
   const val = document.getElementById('quickAnsInput')?.value || '';
-  if(!val.trim()){ toast('Kuch type karo pehle','error'); return; }
+  if(!val.trim()){ toast('Type something first','error'); return; }
   const parsed = parseQuickAns(val);
   const count = Object.keys(parsed).length;
-  if(!count){ toast('Format nahi pehchana — try: 1A2B3C4D','error'); return; }
+  if(!count){ toast('Format not recognized — try: 1A2B3C4D','error'); return; }
 
   // Merge into homeAnsKey
   Object.entries(parsed).forEach(([q,a]) => {
@@ -4288,8 +4574,44 @@ async function useHomePdfInTest() {
     await savePdfMeta(pdfList);
   } catch(e){ toast('Storage full! Remove old PDFs.','error'); return; }
   clearHomePdf();
-  toast('✅ PDF saved to Test list!','success');
+  toast('✅ PDF saved! Creating backup file...','success');
   goPage('setup');
+  // Auto export backup after short delay
+  setTimeout(()=>autoExportAfterPdf(), 800);
+}
+
+async function autoExportAfterPdf(){
+  try{
+    let pdfMeta = [];
+    try{ pdfMeta = await loadPdfMeta(); }catch(e){}
+    const pdfFiles = {};
+    for(const p of pdfMeta){
+      try{ const d = await getPdfData(p.id); if(d) pdfFiles[p.id]=d; }catch(e){}
+    }
+    const date = new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'2-digit'}).replace(/ /g,'-');
+    const data = JSON.stringify({
+      version: 2,
+      date: new Date().toISOString(),
+      questions,
+      pdfMeta,
+      pdfFiles,
+      testHistory: testHistory||[],
+      homeAnsKey: homeAnsKey||{},
+      srsData: srsData||{}
+    });
+    const blob = new Blob([data], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `SmartMock_Backup_${date}.json`;
+    a.click();
+    setTimeout(()=>URL.revokeObjectURL(url), 3000);
+    localStorage.setItem('smt_backup_count', questions.length);
+    localStorage.setItem('smt_backup_time', Date.now());
+    // Also save in-app backup
+    await saveBackupNow(true);
+    toast('📥 Backup saved to Downloads!','success');
+  }catch(e){}
 }
 
 // Restore saved PDF on load (handled by initApp)
