@@ -435,6 +435,18 @@ input,textarea,select,button{font-family:inherit;}
             <span style="font-size:0.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;">🗝️ Answer Key</span>
             <span style="font-size:0.7rem;color:var(--muted);" id="homeAnsKeySummary"></span>
           </div>
+
+          <!-- Quick Type Input -->
+          <div style="margin-bottom:12px;">
+            <div style="display:flex;gap:6px;align-items:center;">
+              <input type="text" id="quickAnsInput" placeholder="e.g. 1A2B3C4D5A..." 
+                style="flex:1;padding:10px 12px;background:var(--s2);border:1.5px solid var(--acc);border-radius:10px;color:var(--text);font-size:0.85rem;font-weight:600;font-family:monospace;"
+                oninput="previewQuickAns(this.value)">
+              <button onclick="applyQuickAns()" style="padding:10px 14px;background:var(--acc);color:#fff;border:none;border-radius:10px;font-size:0.82rem;font-weight:800;cursor:pointer;flex-shrink:0;">✅ Apply</button>
+            </div>
+            <div id="quickAnsPreview" style="font-size:0.72rem;color:var(--muted);margin-top:5px;padding:4px 8px;min-height:18px;"></div>
+          </div>
+
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
             <button onclick="homeAnsKeyPrev()" style="background:var(--s2);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:10px 16px;font-size:1rem;font-weight:800;cursor:pointer;">◀</button>
             <div style="flex:1;text-align:center;font-size:1.4rem;font-weight:800;color:var(--acc);" id="homeAnsKeyQLabel">Q 1</div>
@@ -3958,6 +3970,72 @@ function renderPageOnCanvas(pdfObj, canvasId, pageInfoId, cb) {
       if (cb) cb();
     });
   });
+}
+
+function parseQuickAns(val){
+  // Supports multiple formats including multi-correct:
+  // 1A2B3AC4BD    → Q1=A, Q2=B, Q3=A+C, Q4=B+D
+  // 1.A 2.B 3.AC  → same
+  // 1.AB 2.C 3.BD → multi-correct with combined letters
+  // ABACBD        → sequential, no numbers
+  const result = {};
+  const str = val.toUpperCase().trim();
+
+  // Format 1: number + one or more letters (e.g. 1AC or 1.AC or 1-AC)
+  const pattern1 = /(\d+)[.\-\s]?([ABCD]{1,4})/g;
+  let m;
+  while((m = pattern1.exec(str)) !== null){
+    // Sort letters for consistency: AC, CA → AC
+    const ans = [...new Set(m[2].split(''))].filter(c=>'ABCD'.includes(c)).sort().join('');
+    if(ans) result[parseInt(m[1])] = ans;
+  }
+
+  // Format 2: just letters sequentially (no numbers)
+  if(Object.keys(result).length === 0){
+    const letters = str.match(/[ABCD]+/g) || [];
+    letters.forEach((l,i) => {
+      const ans = [...new Set(l.split(''))].filter(c=>'ABCD'.includes(c)).sort().join('');
+      if(ans) result[i+1] = ans;
+    });
+  }
+
+  return result;
+}
+
+function previewQuickAns(val){
+  const el = document.getElementById('quickAnsPreview');
+  if(!el) return;
+  if(!val.trim()){ el.textContent = ''; return; }
+  const parsed = parseQuickAns(val);
+  const count = Object.keys(parsed).length;
+  if(!count){ el.textContent = '⚠️ Format nahi pehchana'; el.style.color='var(--red)'; return; }
+  const multiCount = Object.values(parsed).filter(a=>a.length>1).length;
+  const preview = Object.entries(parsed).slice(0,6).map(([q,a])=>`Q${q}:${a}`).join(' · ');
+  el.textContent = `✅ ${count} answers${multiCount>0?` (${multiCount} multi-correct)`:''} — ${preview}${count>6?' ...':''}`;
+  el.style.color = 'var(--green)';
+}
+
+function applyQuickAns(){
+  const val = document.getElementById('quickAnsInput')?.value || '';
+  if(!val.trim()){ toast('Kuch type karo pehle','error'); return; }
+  const parsed = parseQuickAns(val);
+  const count = Object.keys(parsed).length;
+  if(!count){ toast('Format nahi pehchana — try: 1A2B3C4D','error'); return; }
+
+  // Merge into homeAnsKey
+  Object.entries(parsed).forEach(([q,a]) => {
+    homeAnsKey[parseInt(q)] = a;
+  });
+
+  // Save and refresh UI
+  openDB().then(()=>dbMiscSet('home_anskey', homeAnsKey)).catch(()=>{});
+  renderHomeAnsKeyBtns();
+
+  // Clear input
+  document.getElementById('quickAnsInput').value = '';
+  document.getElementById('quickAnsPreview').textContent = '';
+
+  toast(`✅ ${count} answers filled!`, 'success');
 }
 
 function homeAnsKeyPrev(){
